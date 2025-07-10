@@ -1,6 +1,8 @@
 module github.com/yetiz-org/asynq/tools
 
-go 1.22
+go 1.23.0
+
+toolchain go1.24.4
 
 require (
 	github.com/MakeNowJust/heredoc/v2 v2.0.1
@@ -10,12 +12,12 @@ require (
 	github.com/mattn/go-runewidth v0.0.16
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/prometheus/client_golang v1.20.5
-	github.com/redis/go-redis/v9 v9.7.0
+	github.com/redis/go-redis/v9 v9.11.0
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.0
-	github.com/yetiz-org/asynq v0.26.3
-	github.com/yetiz-org/asynq/x v0.0.0-20250710130700-bcf8bb2e7dc5
+	github.com/yetiz-org/asynq v0.27.0
+	github.com/yetiz-org/asynq/x v0.0.0-20250710133000-e26648ff8553
 	golang.org/x/exp v0.0.0-20191030013958-a1ab85dbe136
 )
 
@@ -42,14 +44,14 @@ require (
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/spf13/afero v1.1.2 // indirect
-	github.com/spf13/cast v1.7.0 // indirect
+	github.com/spf13/cast v1.9.2 // indirect
 	github.com/spf13/jwalterweatherman v1.0.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
-	golang.org/x/sys v0.27.0 // indirect
+	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/term v0.0.0-20201210144234-2321bbc49cbf // indirect
 	golang.org/x/text v0.16.0 // indirect
-	golang.org/x/time v0.8.0 // indirect
-	google.golang.org/protobuf v1.35.2 // indirect
+	golang.org/x/time v0.12.0 // indirect
+	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/ini.v1 v1.51.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
