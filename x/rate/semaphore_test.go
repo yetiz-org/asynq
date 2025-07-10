@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/hibiken/asynq"
-	"github.com/hibiken/asynq/internal/base"
-	asynqcontext "github.com/hibiken/asynq/internal/context"
 	"github.com/redis/go-redis/v9"
+	"github.com/yetiz-org/asynq"
+	"github.com/yetiz-org/asynq/internal/base"
+	asynqcontext "github.com/yetiz-org/asynq/internal/context"
 )
 
 var (

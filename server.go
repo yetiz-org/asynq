@@ -15,10 +15,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hibiken/asynq/internal/base"
-	"github.com/hibiken/asynq/internal/log"
-	"github.com/hibiken/asynq/internal/rdb"
 	"github.com/redis/go-redis/v9"
+	"github.com/yetiz-org/asynq/internal/base"
+	"github.com/yetiz-org/asynq/internal/log"
+	"github.com/yetiz-org/asynq/internal/rdb"
 )
 
 // Server is responsible for task processing and task lifecycle management.

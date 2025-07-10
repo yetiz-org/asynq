@@ -14,10 +14,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hibiken/asynq/internal/errors"
-	pb "github.com/hibiken/asynq/internal/proto"
-	"github.com/hibiken/asynq/internal/timeutil"
 	"github.com/redis/go-redis/v9"
+	"github.com/yetiz-org/asynq/internal/errors"
+	pb "github.com/yetiz-org/asynq/internal/proto"
+	"github.com/yetiz-org/asynq/internal/timeutil"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
