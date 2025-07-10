@@ -246,6 +246,8 @@ github.com/yetiz-org/asynq v0.26.0 h1:W+X0/mWC+XiyzkWqlueHYptFdsSFCho1NXETjKL61u
 github.com/yetiz-org/asynq v0.26.0/go.mod h1:pNQEmsLR4ugKapZTdMsLO1MI4F6B3sEIS6zgfnr37Fo=
 github.com/yetiz-org/asynq/x v0.0.0-20250710082216-3a05b824e629 h1:6mz8HFtvVkdHoIRQklmgwdQm2HM+VJNnXH3KkkSpdSc=
 github.com/yetiz-org/asynq/x v0.0.0-20250710082216-3a05b824e629/go.mod h1:vP3PXcQ2IpfkhW84/B/1S/3ElQc+y39GZhi8QxL1HWc=
+github.com/yetiz-org/asynq/x v0.0.0-20250710130700-bcf8bb2e7dc5 h1:56X8z5JerNfgWUuJ/srcEvekXQqS8G8tlCnoKKmc62g=
+github.com/yetiz-org/asynq/x v0.0.0-20250710130700-bcf8bb2e7dc5/go.mod h1:gWXy/2B0nacSJr6CSYzYnBNTCKus7FTtIhg3h5vSjiQ=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
