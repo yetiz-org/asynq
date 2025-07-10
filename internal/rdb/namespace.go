@@ -6,10 +6,12 @@ package rdb
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/yetiz-org/asynq/internal/base"
+	"github.com/yetiz-org/asynq/internal/errors"
 )
 
 // NamespaceRDB wraps RDB to provide namespace-aware Redis operations.
@@ -38,16 +40,82 @@ func (r *NamespaceRDB) GetNamespace() string {
 
 // Enqueue adds the given task to the pending list of the queue with namespace support.
 func (r *NamespaceRDB) Enqueue(ctx context.Context, msg *base.TaskMessage) error {
-	// For now, delegate to the original RDB implementation
-	// TODO: Implement namespace-aware version
-	return r.RDB.Enqueue(ctx, msg)
+	var op errors.Op = "rdb.Enqueue"
+	encoded, err := base.EncodeMessage(msg)
+	if err != nil {
+		return errors.E(op, errors.Unknown, fmt.Sprintf("cannot encode message: %v", err))
+	}
+
+	// Use namespace-aware AllQueues key
+	allQueuesKey := base.AllQueuesKey(r.namespace)
+	if _, found := r.queuesPublished.Load(msg.Queue); !found {
+		if err := r.client.SAdd(ctx, allQueuesKey, msg.Queue).Err(); err != nil {
+			return errors.E(op, errors.Unknown, &errors.RedisCommandError{Command: "sadd", Err: err})
+		}
+		r.queuesPublished.Store(msg.Queue, true)
+	}
+
+	// Use namespace-aware keys
+	keys := []string{
+		base.TaskKeyWithNamespace(r.namespace, msg.Queue, msg.ID),
+		base.PendingKeyWithNamespace(r.namespace, msg.Queue),
+	}
+	argv := []interface{}{
+		encoded,
+		msg.ID,
+		r.clock.Now().UnixNano(),
+	}
+	n, err := r.runScriptWithErrorCode(ctx, op, enqueueCmd, keys, argv...)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return errors.E(op, errors.AlreadyExists, errors.ErrTaskIdConflict)
+	}
+	return nil
 }
 
 // EnqueueUnique inserts the given task if the task's uniqueness lock can be acquired with namespace support.
 func (r *NamespaceRDB) EnqueueUnique(ctx context.Context, msg *base.TaskMessage, ttl time.Duration) error {
-	// For now, delegate to the original RDB implementation
-	// TODO: Implement namespace-aware version
-	return r.RDB.EnqueueUnique(ctx, msg, ttl)
+	var op errors.Op = "rdb.EnqueueUnique"
+	encoded, err := base.EncodeMessage(msg)
+	if err != nil {
+		return errors.E(op, errors.Internal, "cannot encode task message: %v", err)
+	}
+
+	// Use namespace-aware AllQueues key
+	allQueuesKey := base.AllQueuesKey(r.namespace)
+	if _, found := r.queuesPublished.Load(msg.Queue); !found {
+		if err := r.client.SAdd(ctx, allQueuesKey, msg.Queue).Err(); err != nil {
+			return errors.E(op, errors.Unknown, &errors.RedisCommandError{Command: "sadd", Err: err})
+		}
+		r.queuesPublished.Store(msg.Queue, true)
+	}
+
+	// Use namespace-aware unique key
+	uniqueKey := base.UniqueKeyWithNamespace(r.namespace, msg.Queue, msg.Type, msg.Payload)
+	keys := []string{
+		uniqueKey,
+		base.TaskKeyWithNamespace(r.namespace, msg.Queue, msg.ID),
+		base.PendingKeyWithNamespace(r.namespace, msg.Queue),
+	}
+	argv := []interface{}{
+		msg.ID,
+		int(ttl.Seconds()),
+		encoded,
+		r.clock.Now().UnixNano(),
+	}
+	n, err := r.runScriptWithErrorCode(ctx, op, enqueueUniqueCmd, keys, argv...)
+	if err != nil {
+		return err
+	}
+	if n == -1 {
+		return errors.E(op, errors.AlreadyExists, errors.ErrDuplicateTask)
+	}
+	if n == 0 {
+		return errors.E(op, errors.AlreadyExists, errors.ErrTaskIdConflict)
+	}
+	return nil
 }
 
 // Dequeue queries given queues in order and pops a task message with namespace support.
@@ -80,9 +148,39 @@ func (r *NamespaceRDB) Requeue(ctx context.Context, msg *base.TaskMessage) error
 
 // Schedule adds the task to the scheduled set to be processed in the future with namespace support.
 func (r *NamespaceRDB) Schedule(ctx context.Context, msg *base.TaskMessage, processAt time.Time) error {
-	// For now, delegate to the original RDB implementation
-	// TODO: Implement namespace-aware version
-	return r.RDB.Schedule(ctx, msg, processAt)
+	var op errors.Op = "rdb.Schedule"
+	encoded, err := base.EncodeMessage(msg)
+	if err != nil {
+		return errors.E(op, errors.Unknown, fmt.Sprintf("cannot encode message: %v", err))
+	}
+
+	// Use namespace-aware AllQueues key
+	allQueuesKey := base.AllQueuesKey(r.namespace)
+	if _, found := r.queuesPublished.Load(msg.Queue); !found {
+		if err := r.client.SAdd(ctx, allQueuesKey, msg.Queue).Err(); err != nil {
+			return errors.E(op, errors.Unknown, &errors.RedisCommandError{Command: "sadd", Err: err})
+		}
+		r.queuesPublished.Store(msg.Queue, true)
+	}
+
+	// Use namespace-aware keys
+	keys := []string{
+		base.TaskKeyWithNamespace(r.namespace, msg.Queue, msg.ID),
+		base.ScheduledKeyWithNamespace(r.namespace, msg.Queue),
+	}
+	argv := []interface{}{
+		encoded,
+		processAt.Unix(),
+		msg.ID,
+	}
+	n, err := r.runScriptWithErrorCode(ctx, op, scheduleCmd, keys, argv...)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return errors.E(op, errors.AlreadyExists, errors.ErrTaskIdConflict)
+	}
+	return nil
 }
 
 // ScheduleUnique adds the task to the backlog queue with namespace support.
