@@ -28,23 +28,42 @@ type Client struct {
 	// When a Client has been created with an existing Redis connection, we do
 	// not want to close it.
 	sharedConnection bool
+	// namespace is the Redis key namespace for this client instance
+	namespace string
 }
 
 // NewClient returns a new Client instance given a redis connection option.
+// Uses the default namespace "asynq".
 func NewClient(r RedisConnOpt) *Client {
+	return NewClientWithNamespace(r, base.DefaultNamespace)
+}
+
+// NewClientWithNamespace returns a new Client instance given a redis connection option and namespace.
+func NewClientWithNamespace(r RedisConnOpt, namespace string) *Client {
 	redisClient, ok := r.MakeRedisClient().(redis.UniversalClient)
 	if !ok {
 		panic(fmt.Sprintf("asynq: unsupported RedisConnOpt type %T", r))
 	}
-	client := NewClientFromRedisClient(redisClient)
+	client := NewClientFromRedisClientWithNamespace(redisClient, namespace)
 	client.sharedConnection = false
 	return client
 }
 
 // NewClientFromRedisClient returns a new instance of Client given a redis.UniversalClient
 // Warning: The underlying redis connection pool will not be closed by Asynq, you are responsible for closing it.
+// Uses the default namespace "asynq".
 func NewClientFromRedisClient(c redis.UniversalClient) *Client {
-	return &Client{broker: rdb.NewRDB(c), sharedConnection: true}
+	return NewClientFromRedisClientWithNamespace(c, base.DefaultNamespace)
+}
+
+// NewClientFromRedisClientWithNamespace returns a new instance of Client given a redis.UniversalClient and namespace
+// Warning: The underlying redis connection pool will not be closed by Asynq, you are responsible for closing it.
+func NewClientFromRedisClientWithNamespace(c redis.UniversalClient, namespace string) *Client {
+	return &Client{
+		broker:           rdb.NewNamespaceRDB(c, namespace),
+		sharedConnection: true,
+		namespace:        namespace,
+	}
 }
 
 type OptionType int

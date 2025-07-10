@@ -43,6 +43,9 @@ type Server struct {
 
 	state *serverState
 
+	// namespace is the Redis key namespace for this server instance
+	namespace string
+
 	// wait group to wait for all goroutines to finish.
 	wg            sync.WaitGroup
 	forwarder     *forwarder
@@ -252,6 +255,13 @@ type Config struct {
 	// If unset or zero, default batch size of 100 is used.
 	// Make sure to not put a big number as the batch size to prevent a long-running script.
 	JanitorBatchSize int
+
+	// Namespace specifies the Redis key namespace for this server instance.
+	//
+	// If unset or empty, the default namespace "asynq" is used.
+	// This allows multiple asynq instances to use the same Redis database
+	// with different namespaces to avoid key conflicts.
+	Namespace string
 }
 
 // GroupAggregator aggregates a group of tasks into one before the tasks are passed to the Handler.
@@ -442,6 +452,11 @@ func NewServer(r RedisConnOpt, cfg Config) *Server {
 // and server configuration
 // Warning: The underlying redis connection pool will not be closed by Asynq, you are responsible for closing it.
 func NewServerFromRedisClient(c redis.UniversalClient, cfg Config) *Server {
+	// Set default namespace if not specified
+	namespace := cfg.Namespace
+	if namespace == "" {
+		namespace = base.DefaultNamespace
+	}
 	baseCtxFn := cfg.BaseContext
 	if baseCtxFn == nil {
 		baseCtxFn = context.Background
@@ -460,10 +475,12 @@ func NewServerFromRedisClient(c redis.UniversalClient, cfg Config) *Server {
 	if delayFunc == nil {
 		delayFunc = DefaultRetryDelayFunc
 	}
+
 	isFailureFunc := cfg.IsFailure
 	if isFailureFunc == nil {
 		isFailureFunc = defaultIsFailureFunc
 	}
+
 	queues := make(map[string]int)
 	for qname, p := range cfg.Queues {
 		if err := base.ValidateQueueName(qname); err != nil {
@@ -476,10 +493,12 @@ func NewServerFromRedisClient(c redis.UniversalClient, cfg Config) *Server {
 	if len(queues) == 0 {
 		queues = defaultQueueConfig
 	}
-	var qnames []string
+
+	qnames := make([]string, 0, len(queues))
 	for q := range queues {
 		qnames = append(qnames, q)
 	}
+
 	shutdownTimeout := cfg.ShutdownTimeout
 	if shutdownTimeout == 0 {
 		shutdownTimeout = defaultShutdownTimeout
@@ -503,7 +522,7 @@ func NewServerFromRedisClient(c redis.UniversalClient, cfg Config) *Server {
 	}
 	logger.SetLevel(toInternalLogLevel(loglevel))
 
-	rdb := rdb.NewRDB(c)
+	rdb := rdb.NewNamespaceRDB(c, namespace)
 	starting := make(chan *workerInfo)
 	finished := make(chan *base.TaskMessage)
 	syncCh := make(chan *syncRequest)
@@ -607,6 +626,7 @@ func NewServerFromRedisClient(c redis.UniversalClient, cfg Config) *Server {
 		broker:           rdb,
 		sharedConnection: true,
 		state:            srvState,
+		namespace:        namespace,
 		forwarder:        forwarder,
 		processor:        processor,
 		syncer:           syncer,
