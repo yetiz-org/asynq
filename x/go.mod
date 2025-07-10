@@ -1,11 +1,14 @@
 module github.com/yetiz-org/asynq/x
 
-go 1.22
+go 1.23.0
+
+toolchain go1.24.4
 
 require (
 	github.com/google/uuid v1.6.0
 	github.com/prometheus/client_golang v1.20.5
-	github.com/redis/go-redis/v9 v9.7.0
+	github.com/redis/go-redis/v9 v9.11.0
+	github.com/yetiz-org/asynq v0.27.0
 )
 
 require (
@@ -17,9 +20,8 @@ require (
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
-	github.com/spf13/cast v1.7.0 // indirect
-	github.com/yetiz-org/asynq v0.26.3 // indirect
-	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/time v0.8.0 // indirect
-	google.golang.org/protobuf v1.35.2 // indirect
+	github.com/spf13/cast v1.9.2 // indirect
+	golang.org/x/sys v0.34.0 // indirect
+	golang.org/x/time v0.12.0 // indirect
+	google.golang.org/protobuf v1.36.6 // indirect
 )
