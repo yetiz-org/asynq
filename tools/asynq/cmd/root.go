@@ -33,9 +33,10 @@ var cfgFile string
 
 // Global flag variables
 var (
-	uri      string
-	db       int
-	password string
+	uri       string
+	db        int
+	password  string
+	namespace string
 
 	useRedisCluster bool
 	clusterAddrs    string
@@ -309,6 +310,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&uri, "uri", "u", "127.0.0.1:6379", "Redis server URI")
 	rootCmd.PersistentFlags().IntVarP(&db, "db", "n", 0, "Redis database number (default is 0)")
 	rootCmd.PersistentFlags().StringVarP(&password, "password", "p", "", "Password to use when connecting to redis server")
+	rootCmd.PersistentFlags().StringVar(&namespace, "namespace", "asynq", "Namespace for Redis keys (default is 'asynq')")
 	rootCmd.PersistentFlags().BoolVar(&useRedisCluster, "cluster", false, "Connect to redis cluster")
 	rootCmd.PersistentFlags().StringVar(&clusterAddrs, "cluster_addrs",
 		"127.0.0.1:7000,127.0.0.1:7001,127.0.0.1:7002,127.0.0.1:7003,127.0.0.1:7004,127.0.0.1:7005",
@@ -321,6 +323,7 @@ func init() {
 	viper.BindPFlag("uri", rootCmd.PersistentFlags().Lookup("uri"))
 	viper.BindPFlag("db", rootCmd.PersistentFlags().Lookup("db"))
 	viper.BindPFlag("password", rootCmd.PersistentFlags().Lookup("password"))
+	viper.BindPFlag("namespace", rootCmd.PersistentFlags().Lookup("namespace"))
 	viper.BindPFlag("cluster", rootCmd.PersistentFlags().Lookup("cluster"))
 	viper.BindPFlag("cluster_addrs", rootCmd.PersistentFlags().Lookup("cluster_addrs"))
 	viper.BindPFlag("tls_server", rootCmd.PersistentFlags().Lookup("tls_server"))
@@ -371,12 +374,27 @@ func createRDB() *rdb.RDB {
 			TLSConfig: getTLSConfig(),
 		})
 	}
+
+	ns := viper.GetString("namespace")
+	if ns == "" {
+		ns = "asynq" // fallback to default
+	}
+
+	// Create namespace-aware RDB if namespace is not the default
+	if ns != "asynq" {
+		namespaceRDB := rdb.NewNamespaceRDB(c, ns)
+		return namespaceRDB.RDB // Return the embedded RDB
+	}
 	return rdb.NewRDB(c)
 }
 
 // createClient creates a Client instance using flag values and returns it.
 func createClient() *asynq.Client {
-	return asynq.NewClient(getRedisConnOpt())
+	ns := viper.GetString("namespace")
+	if ns == "" {
+		ns = "asynq" // fallback to default
+	}
+	return asynq.NewClientWithNamespace(getRedisConnOpt(), ns)
 }
 
 // createInspector creates a Inspector instance using flag values and returns it.

@@ -45,6 +45,27 @@ func NewInspectorFromRedisClient(c redis.UniversalClient) *Inspector {
 	}
 }
 
+// NewInspectorWithNamespace returns a new instance of Inspector with the specified namespace.
+func NewInspectorWithNamespace(r RedisConnOpt, namespace string) *Inspector {
+	c, ok := r.MakeRedisClient().(redis.UniversalClient)
+	if !ok {
+		panic(fmt.Sprintf("inspeq: unsupported RedisConnOpt type %T", r))
+	}
+	inspector := NewInspectorFromRedisClientWithNamespace(c, namespace)
+	inspector.sharedConnection = false
+	return inspector
+}
+
+// NewInspectorFromRedisClientWithNamespace returns a new instance of Inspector given a redis.UniversalClient and namespace
+// Warning: The underlying redis connection pool will not be closed by Asynq, you are responsible for closing it.
+func NewInspectorFromRedisClientWithNamespace(c redis.UniversalClient, namespace string) *Inspector {
+	namespaceRDB := rdb.NewNamespaceRDB(c, namespace)
+	return &Inspector{
+		rdb:              namespaceRDB.RDB, // Use the embedded RDB
+		sharedConnection: true,
+	}
+}
+
 // Close closes the connection with redis.
 func (i *Inspector) Close() error {
 	if i.sharedConnection {
