@@ -14,7 +14,7 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.0
-	github.com/yetiz-org/asynq v0.26.0
+	github.com/yetiz-org/asynq v0.26.1
 	github.com/yetiz-org/asynq/x v0.0.0-20250710082216-3a05b824e629
 	golang.org/x/exp v0.0.0-20191030013958-a1ab85dbe136
 )
