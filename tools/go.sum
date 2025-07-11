@@ -242,10 +242,10 @@ github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
-github.com/yetiz-org/asynq v0.27.0 h1:cA892uh1gDbCX4OygReO9Mh5a5urwFSOjSkl2lL2sHo=
-github.com/yetiz-org/asynq v0.27.0/go.mod h1:pNQEmsLR4ugKapZTdMsLO1MI4F6B3sEIS6zgfnr37Fo=
-github.com/yetiz-org/asynq/x v0.0.0-20250710133000-e26648ff8553 h1:/UiLun+o3TwsJhuSMasYglhFoieU3/9lz1XkIBvPHLE=
-github.com/yetiz-org/asynq/x v0.0.0-20250710133000-e26648ff8553/go.mod h1:3UWTOUBVdFNfLqhFl8AAKxJmfknYsUEXnxdoYqnKXiI=
+github.com/yetiz-org/asynq v0.28.0 h1:SqSs5ga1wVhvwVwH26XntQppohEO36AIgatDy/hzvjY=
+github.com/yetiz-org/asynq v0.28.0/go.mod h1:pNQEmsLR4ugKapZTdMsLO1MI4F6B3sEIS6zgfnr37Fo=
+github.com/yetiz-org/asynq/x v0.0.0-20250710133236-5af19de7c6ed h1:cTad6B0vaO4tw9AuSEn9a5tYsQrXlVNRVhdWOLeXkGs=
+github.com/yetiz-org/asynq/x v0.0.0-20250710133236-5af19de7c6ed/go.mod h1:3UWTOUBVdFNfLqhFl8AAKxJmfknYsUEXnxdoYqnKXiI=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
