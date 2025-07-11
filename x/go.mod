@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/redis/go-redis/v9 v9.11.0
-	github.com/yetiz-org/asynq v0.27.0
+	github.com/yetiz-org/asynq v0.28.0
 )
 
 require (
