@@ -59,9 +59,9 @@ func NewInspectorWithNamespace(r RedisConnOpt, namespace string) *Inspector {
 // NewInspectorFromRedisClientWithNamespace returns a new instance of Inspector given a redis.UniversalClient and namespace
 // Warning: The underlying redis connection pool will not be closed by Asynq, you are responsible for closing it.
 func NewInspectorFromRedisClientWithNamespace(c redis.UniversalClient, namespace string) *Inspector {
-	namespaceRDB := rdb.NewNamespaceRDB(c, namespace)
+	namespaceRDB := rdb.NewRDBWithNamespace(c, namespace)
 	return &Inspector{
-		rdb:              namespaceRDB.RDB, // Use the embedded RDB
+		rdb:              namespaceRDB,
 		sharedConnection: true,
 	}
 }

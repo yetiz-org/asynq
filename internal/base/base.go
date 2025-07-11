@@ -34,33 +34,39 @@ var DefaultQueue = PendingKey(DefaultQueueName)
 // Default namespace for backward compatibility
 const DefaultNamespace = "asynq"
 
-// Global Redis keys with default namespace.
-const (
-	AllServers    = "asynq:servers"    // ZSET
-	AllWorkers    = "asynq:workers"    // ZSET
-	AllSchedulers = "asynq:schedulers" // ZSET
-	AllQueues     = "asynq:queues"     // SET
-	CancelChannel = "asynq:cancel"     // PubSub channel
-)
-
-// Global Redis key generators with namespace support.
+// Global Redis key generators that require namespace.
 func AllServersKey(namespace string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
 	return namespace + ":servers"
 }
 
 func AllWorkersKey(namespace string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
 	return namespace + ":workers"
 }
 
 func AllSchedulersKey(namespace string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
 	return namespace + ":schedulers"
 }
 
 func AllQueuesKey(namespace string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
 	return namespace + ":queues"
 }
 
 func CancelChannelKey(namespace string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
 	return namespace + ":cancel"
 }
 

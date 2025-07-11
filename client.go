@@ -60,7 +60,7 @@ func NewClientFromRedisClient(c redis.UniversalClient) *Client {
 // Warning: The underlying redis connection pool will not be closed by Asynq, you are responsible for closing it.
 func NewClientFromRedisClientWithNamespace(c redis.UniversalClient, namespace string) *Client {
 	return &Client{
-		broker:           rdb.NewNamespaceRDB(c, namespace),
+		broker:           rdb.NewRDBWithNamespace(c, namespace),
 		sharedConnection: true,
 		namespace:        namespace,
 	}

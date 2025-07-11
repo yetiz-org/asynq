@@ -522,7 +522,7 @@ func NewServerFromRedisClient(c redis.UniversalClient, cfg Config) *Server {
 	}
 	logger.SetLevel(toInternalLogLevel(loglevel))
 
-	rdb := rdb.NewNamespaceRDB(c, namespace)
+	rdb := rdb.NewRDBWithNamespace(c, namespace)
 	starting := make(chan *workerInfo)
 	finished := make(chan *base.TaskMessage)
 	syncCh := make(chan *syncRequest)
