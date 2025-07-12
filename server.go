@@ -563,6 +563,7 @@ func NewServerFromRedisClient(c redis.UniversalClient, cfg Config) *Server {
 	processor := newProcessor(processorParams{
 		logger:            logger,
 		broker:            rdb,
+		namespace:         namespace,
 		retryDelayFunc:    delayFunc,
 		taskCheckInterval: taskCheckInterval,
 		baseCtxFn:         baseCtxFn,

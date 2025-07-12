@@ -23,13 +23,10 @@ import (
 )
 
 // Version of asynq library and CLI.
-const Version = "0.25.1"
+const Version = "0.29.1"
 
 // DefaultQueueName is the queue name used if none are specified by user.
 const DefaultQueueName = "default"
-
-// DefaultQueue is the redis key for the default queue.
-var DefaultQueue = PendingKey(DefaultQueueName)
 
 // Default namespace for backward compatibility
 const DefaultNamespace = "asynq"
@@ -133,262 +130,205 @@ func ValidateQueueName(qname string) error {
 }
 
 // QueueKeyPrefix returns a prefix for all keys in the given queue.
-func QueueKeyPrefix(qname string) string {
-	return "asynq:{" + qname + "}:"
-}
-
-// QueueKeyPrefixWithNamespace returns a prefix for all keys in the given queue with namespace support.
-func QueueKeyPrefixWithNamespace(namespace, qname string) string {
-	return namespace + ":{" + qname + "}:"
+func QueueKeyPrefix(namespace, qname string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return fmt.Sprintf("%s:{%s}:", namespace, qname)
 }
 
 // TaskKeyPrefix returns a prefix for task key.
-func TaskKeyPrefix(qname string) string {
-	return QueueKeyPrefix(qname) + "t:"
-}
-
-// TaskKeyPrefixWithNamespace returns a prefix for task key with namespace support.
-func TaskKeyPrefixWithNamespace(namespace, qname string) string {
-	return QueueKeyPrefixWithNamespace(namespace, qname) + "t:"
+func TaskKeyPrefix(namespace, qname string) string {
+	return QueueKeyPrefix(namespace, qname) + "t:"
 }
 
 // TaskKey returns a redis key for the given task message.
-func TaskKey(qname, id string) string {
-	return TaskKeyPrefix(qname) + id
-}
-
-// TaskKeyWithNamespace returns a redis key for the given task message with namespace support.
-func TaskKeyWithNamespace(namespace, qname, id string) string {
-	return TaskKeyPrefixWithNamespace(namespace, qname) + id
+func TaskKey(namespace, qname, id string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return TaskKeyPrefix(namespace, qname) + id
 }
 
 // PendingKey returns a redis key for the given queue name.
-func PendingKey(qname string) string {
-	return QueueKeyPrefix(qname) + "pending"
-}
-
-// PendingKeyWithNamespace returns a redis key for the given queue name with namespace support.
-func PendingKeyWithNamespace(namespace, qname string) string {
-	return QueueKeyPrefixWithNamespace(namespace, qname) + "pending"
+func PendingKey(namespace, qname string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return QueueKeyPrefix(namespace, qname) + "pending"
 }
 
 // ActiveKey returns a redis key for the active tasks.
-func ActiveKey(qname string) string {
-	return QueueKeyPrefix(qname) + "active"
-}
-
-// ActiveKeyWithNamespace returns a redis key for the active tasks with namespace support.
-func ActiveKeyWithNamespace(namespace, qname string) string {
-	return QueueKeyPrefixWithNamespace(namespace, qname) + "active"
+func ActiveKey(namespace, qname string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return QueueKeyPrefix(namespace, qname) + "active"
 }
 
 // ScheduledKey returns a redis key for the scheduled tasks.
-func ScheduledKey(qname string) string {
-	return QueueKeyPrefix(qname) + "scheduled"
-}
-
-// ScheduledKeyWithNamespace returns a redis key for the scheduled tasks with namespace support.
-func ScheduledKeyWithNamespace(namespace, qname string) string {
-	return QueueKeyPrefixWithNamespace(namespace, qname) + "scheduled"
+func ScheduledKey(namespace, qname string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return QueueKeyPrefix(namespace, qname) + "scheduled"
 }
 
 // RetryKey returns a redis key for the retry tasks.
-func RetryKey(qname string) string {
-	return QueueKeyPrefix(qname) + "retry"
-}
-
-// RetryKeyWithNamespace returns a redis key for the retry tasks with namespace support.
-func RetryKeyWithNamespace(namespace, qname string) string {
-	return QueueKeyPrefixWithNamespace(namespace, qname) + "retry"
+func RetryKey(namespace, qname string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return QueueKeyPrefix(namespace, qname) + "retry"
 }
 
 // ArchivedKey returns a redis key for the archived tasks.
-func ArchivedKey(qname string) string {
-	return QueueKeyPrefix(qname) + "archived"
-}
-
-// ArchivedKeyWithNamespace returns a redis key for the archived tasks with namespace support.
-func ArchivedKeyWithNamespace(namespace, qname string) string {
-	return QueueKeyPrefixWithNamespace(namespace, qname) + "archived"
+func ArchivedKey(namespace, qname string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return QueueKeyPrefix(namespace, qname) + "archived"
 }
 
 // LeaseKey returns a redis key for the lease.
-func LeaseKey(qname string) string {
-	return QueueKeyPrefix(qname) + "lease"
+func LeaseKey(namespace, qname string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return QueueKeyPrefix(namespace, qname) + "lease"
 }
 
-// LeaseKeyWithNamespace returns a redis key for the lease with namespace support.
-func LeaseKeyWithNamespace(namespace, qname string) string {
-	return QueueKeyPrefixWithNamespace(namespace, qname) + "lease"
-}
-
-func CompletedKey(qname string) string {
-	return QueueKeyPrefix(qname) + "completed"
-}
-
-// CompletedKeyWithNamespace returns a redis key for completed tasks with namespace support.
-func CompletedKeyWithNamespace(namespace, qname string) string {
-	return QueueKeyPrefixWithNamespace(namespace, qname) + "completed"
+// CompletedKey returns a redis key for completed tasks.
+func CompletedKey(namespace, qname string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return QueueKeyPrefix(namespace, qname) + "completed"
 }
 
 // PausedKey returns a redis key to indicate that the given queue is paused.
-func PausedKey(qname string) string {
-	return QueueKeyPrefix(qname) + "paused"
-}
-
-// PausedKeyWithNamespace returns a redis key to indicate that the given queue is paused with namespace support.
-func PausedKeyWithNamespace(namespace, qname string) string {
-	return QueueKeyPrefixWithNamespace(namespace, qname) + "paused"
+func PausedKey(namespace, qname string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return QueueKeyPrefix(namespace, qname) + "paused"
 }
 
 // ProcessedTotalKey returns a redis key for total processed count for the given queue.
-func ProcessedTotalKey(qname string) string {
-	return QueueKeyPrefix(qname) + "processed"
-}
-
-// ProcessedTotalKeyWithNamespace returns a redis key for total processed count for the given queue with namespace support.
-func ProcessedTotalKeyWithNamespace(namespace, qname string) string {
-	return QueueKeyPrefixWithNamespace(namespace, qname) + "processed"
+func ProcessedTotalKey(namespace, qname string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return QueueKeyPrefix(namespace, qname) + "processed"
 }
 
 // FailedTotalKey returns a redis key for total failure count for the given queue.
-func FailedTotalKey(qname string) string {
-	return QueueKeyPrefix(qname) + "failed"
-}
-
-// FailedTotalKeyWithNamespace returns a redis key for total failure count for the given queue with namespace support.
-func FailedTotalKeyWithNamespace(namespace, qname string) string {
-	return QueueKeyPrefixWithNamespace(namespace, qname) + "failed"
+func FailedTotalKey(namespace, qname string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return QueueKeyPrefix(namespace, qname) + "failed"
 }
 
 // ProcessedKey returns a redis key for processed count for the given day for the queue.
-func ProcessedKey(qname string, t time.Time) string {
-	return QueueKeyPrefix(qname) + "processed:" + t.UTC().Format("2006-01-02")
-}
-
-// ProcessedKeyWithNamespace returns a redis key for processed count for the given day for the queue with namespace support.
-func ProcessedKeyWithNamespace(namespace, qname string, t time.Time) string {
-	return QueueKeyPrefixWithNamespace(namespace, qname) + "processed:" + t.UTC().Format("2006-01-02")
+func ProcessedKey(namespace, qname string, t time.Time) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return QueueKeyPrefix(namespace, qname) + fmt.Sprintf("processed:%s", t.UTC().Format("2006-01-02"))
 }
 
 // FailedKey returns a redis key for failure count for the given day for the queue.
-func FailedKey(qname string, t time.Time) string {
-	return QueueKeyPrefix(qname) + "failed:" + t.UTC().Format("2006-01-02")
-}
-
-// FailedKeyWithNamespace returns a redis key for failure count for the given day for the queue with namespace support.
-func FailedKeyWithNamespace(namespace, qname string, t time.Time) string {
-	return QueueKeyPrefixWithNamespace(namespace, qname) + "failed:" + t.UTC().Format("2006-01-02")
+func FailedKey(namespace, qname string, t time.Time) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return QueueKeyPrefix(namespace, qname) + fmt.Sprintf("failed:%s", t.UTC().Format("2006-01-02"))
 }
 
 // ServerInfoKey returns a redis key for process info.
-func ServerInfoKey(hostname string, pid int, serverID string) string {
-	return fmt.Sprintf("asynq:servers:{%s:%d:%s}", hostname, pid, serverID)
-}
-
-// ServerInfoKeyWithNamespace returns a redis key for process info with namespace support.
-func ServerInfoKeyWithNamespace(namespace, hostname string, pid int, serverID string) string {
+func ServerInfoKey(namespace, hostname string, pid int, serverID string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
 	return fmt.Sprintf("%s:servers:{%s:%d:%s}", namespace, hostname, pid, serverID)
 }
 
 // WorkersKey returns a redis key for the workers given hostname, pid, and server ID.
-func WorkersKey(hostname string, pid int, serverID string) string {
-	return fmt.Sprintf("asynq:workers:{%s:%d:%s}", hostname, pid, serverID)
-}
-
-// WorkersKeyWithNamespace returns a redis key for the workers given hostname, pid, and server ID with namespace support.
-func WorkersKeyWithNamespace(namespace, hostname string, pid int, serverID string) string {
+func WorkersKey(namespace, hostname string, pid int, serverID string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
 	return fmt.Sprintf("%s:workers:{%s:%d:%s}", namespace, hostname, pid, serverID)
 }
 
 // SchedulerEntriesKey returns a redis key for the scheduler entries given scheduler ID.
-func SchedulerEntriesKey(schedulerID string) string {
-	return "asynq:schedulers:{" + schedulerID + "}"
-}
-
-// SchedulerEntriesKeyWithNamespace returns a redis key for the scheduler entries given scheduler ID with namespace support.
-func SchedulerEntriesKeyWithNamespace(namespace, schedulerID string) string {
+func SchedulerEntriesKey(namespace, schedulerID string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
 	return namespace + ":schedulers:{" + schedulerID + "}"
 }
 
 // SchedulerHistoryKey returns a redis key for the scheduler's history for the given entry.
-func SchedulerHistoryKey(entryID string) string {
-	return "asynq:scheduler_history:" + entryID
-}
-
-// SchedulerHistoryKeyWithNamespace returns a redis key for the scheduler's history for the given entry with namespace support.
-func SchedulerHistoryKeyWithNamespace(namespace, entryID string) string {
+func SchedulerHistoryKey(namespace, entryID string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
 	return namespace + ":scheduler_history:" + entryID
 }
 
 // UniqueKey returns a redis key with the given type, payload, and queue name.
-func UniqueKey(qname, tasktype string, payload []byte) string {
+func UniqueKey(namespace, qname, tasktype string, payload []byte) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
 	if payload == nil {
-		return QueueKeyPrefix(qname) + "unique:" + tasktype + ":"
+		return QueueKeyPrefix(namespace, qname) + "unique:" + tasktype + ":"
 	}
 	checksum := md5.Sum(payload)
-	return QueueKeyPrefix(qname) + "unique:" + tasktype + ":" + hex.EncodeToString(checksum[:])
-}
-
-// UniqueKeyWithNamespace returns a redis key with the given type, payload, and queue name with namespace support.
-func UniqueKeyWithNamespace(namespace, qname, tasktype string, payload []byte) string {
-	if payload == nil {
-		return QueueKeyPrefixWithNamespace(namespace, qname) + "unique:" + tasktype + ":"
-	}
-	checksum := md5.Sum(payload)
-	return QueueKeyPrefixWithNamespace(namespace, qname) + "unique:" + tasktype + ":" + hex.EncodeToString(checksum[:])
+	return QueueKeyPrefix(namespace, qname) + "unique:" + tasktype + ":" + hex.EncodeToString(checksum[:])
 }
 
 // GroupKeyPrefix returns a prefix for group key.
-func GroupKeyPrefix(qname string) string {
-	return QueueKeyPrefix(qname) + "g:"
-}
-
-// GroupKeyPrefixWithNamespace returns a prefix for group key with namespace support.
-func GroupKeyPrefixWithNamespace(namespace, qname string) string {
-	return QueueKeyPrefixWithNamespace(namespace, qname) + "g:"
+func GroupKeyPrefix(namespace, qname string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return QueueKeyPrefix(namespace, qname) + "g:"
 }
 
 // GroupKey returns a redis key used to group tasks belong in the same group.
-func GroupKey(qname, gkey string) string {
-	return GroupKeyPrefix(qname) + gkey
-}
-
-// GroupKeyWithNamespace returns a redis key used to group tasks belong in the same group with namespace support.
-func GroupKeyWithNamespace(namespace, qname, gkey string) string {
-	return GroupKeyPrefixWithNamespace(namespace, qname) + gkey
+func GroupKey(namespace, qname, gkey string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return GroupKeyPrefix(namespace, qname) + gkey
 }
 
 // AggregationSetKey returns a redis key used for an aggregation set.
-func AggregationSetKey(qname, gname, setID string) string {
-	return GroupKey(qname, gname) + ":" + setID
-}
-
-// AggregationSetKeyWithNamespace returns a redis key used for an aggregation set with namespace support.
-func AggregationSetKeyWithNamespace(namespace, qname, gname, setID string) string {
-	return GroupKeyWithNamespace(namespace, qname, gname) + ":" + setID
+func AggregationSetKey(namespace, qname, gname, setID string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return GroupKey(namespace, qname, gname) + ":" + setID
 }
 
 // AllGroups return a redis key used to store all group keys used in a given queue.
-func AllGroups(qname string) string {
-	return QueueKeyPrefix(qname) + "groups"
-}
-
-// AllGroupsWithNamespace return a redis key used to store all group keys used in a given queue with namespace support.
-func AllGroupsWithNamespace(namespace, qname string) string {
-	return QueueKeyPrefixWithNamespace(namespace, qname) + "groups"
+func AllGroups(namespace, qname string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return QueueKeyPrefix(namespace, qname) + "groups"
 }
 
 // AllAggregationSets returns a redis key used to store all aggregation sets (set of tasks staged to be aggregated)
 // in a given queue.
-func AllAggregationSets(qname string) string {
-	return QueueKeyPrefix(qname) + "aggregation_sets"
-}
-
-// AllAggregationSetsWithNamespace returns a redis key used to store all aggregation sets (set of tasks staged to be aggregated)
-// in a given queue with namespace support.
-func AllAggregationSetsWithNamespace(namespace, qname string) string {
-	return QueueKeyPrefixWithNamespace(namespace, qname) + "aggregation_sets"
+func AllAggregationSets(namespace, qname string) string {
+	if namespace == "" {
+		namespace = DefaultNamespace
+	}
+	return QueueKeyPrefix(namespace, qname) + "aggregation_sets"
 }
 
 // TaskMessage is the internal representation of a task with additional metadata fields.

@@ -90,7 +90,7 @@ func TestEnqueue(t *testing.T) {
 		}
 
 		// Check Pending list has task ID.
-		pendingKey := base.PendingKey(tc.msg.Queue)
+		pendingKey := base.PendingKey("", tc.msg.Queue)
 		pendingIDs := r.client.LRange(context.Background(), pendingKey, 0, -1).Val()
 		if n := len(pendingIDs); n != 1 {
 			t.Errorf("Redis LIST %q contains %d IDs, want 1", pendingKey, n)
@@ -102,7 +102,7 @@ func TestEnqueue(t *testing.T) {
 		}
 
 		// Check the value under the task key.
-		taskKey := base.TaskKey(tc.msg.Queue, tc.msg.ID)
+		taskKey := base.TaskKey("", tc.msg.Queue, tc.msg.ID)
 		encoded := r.client.HGet(context.Background(), taskKey, "msg").Val() // "msg" field
 		decoded := h.MustUnmarshal(t, encoded)
 		if diff := cmp.Diff(tc.msg, decoded); diff != "" {
@@ -221,7 +221,7 @@ func TestEnqueueUnique(t *testing.T) {
 		Type:      "email",
 		Payload:   h.JSON(map[string]interface{}{"user_id": json.Number("123")}),
 		Queue:     base.DefaultQueueName,
-		UniqueKey: base.UniqueKey(base.DefaultQueueName, "email", h.JSON(map[string]interface{}{"user_id": 123})),
+		UniqueKey: base.UniqueKey("", base.DefaultQueueName, "email", h.JSON(map[string]interface{}{"user_id": 123})),
 	}
 
 	enqueueTime := time.Now()
@@ -246,7 +246,7 @@ func TestEnqueueUnique(t *testing.T) {
 		}
 		gotPending := h.GetPendingMessages(t, r.client, tc.msg.Queue)
 		if len(gotPending) != 1 {
-			t.Errorf("%q has length %d, want 1", base.PendingKey(tc.msg.Queue), len(gotPending))
+			t.Errorf("%q has length %d, want 1", base.PendingKey("", tc.msg.Queue), len(gotPending))
 			continue
 		}
 		if diff := cmp.Diff(tc.msg, gotPending[0]); diff != "" {
@@ -257,7 +257,7 @@ func TestEnqueueUnique(t *testing.T) {
 		}
 
 		// Check Pending list has task ID.
-		pendingKey := base.PendingKey(tc.msg.Queue)
+		pendingKey := base.PendingKey("", tc.msg.Queue)
 		pendingIDs := r.client.LRange(context.Background(), pendingKey, 0, -1).Val()
 		if len(pendingIDs) != 1 {
 			t.Errorf("Redis LIST %q contains %d IDs, want 1", pendingKey, len(pendingIDs))
@@ -269,7 +269,7 @@ func TestEnqueueUnique(t *testing.T) {
 		}
 
 		// Check the value under the task key.
-		taskKey := base.TaskKey(tc.msg.Queue, tc.msg.ID)
+		taskKey := base.TaskKey("", tc.msg.Queue, tc.msg.ID)
 		encoded := r.client.HGet(context.Background(), taskKey, "msg").Val() // "msg" field
 		decoded := h.MustUnmarshal(t, encoded)
 		if diff := cmp.Diff(tc.msg, decoded); diff != "" {
@@ -476,19 +476,19 @@ func TestDequeue(t *testing.T) {
 		for queue, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r.client, queue)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q: (-want,+got):\n%s", base.PendingKey(queue), diff)
+				t.Errorf("mismatch found in %q: (-want,+got):\n%s", base.PendingKey("", queue), diff)
 			}
 		}
 		for queue, want := range tc.wantActive {
 			gotActive := h.GetActiveMessages(t, r.client, queue)
 			if diff := cmp.Diff(want, gotActive, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q: (-want,+got):\n%s", base.ActiveKey(queue), diff)
+				t.Errorf("mismatch found in %q: (-want,+got):\n%s", base.ActiveKey("", queue), diff)
 			}
 		}
 		for queue, want := range tc.wantLease {
 			gotLease := h.GetLeaseEntries(t, r.client, queue)
 			if diff := cmp.Diff(want, gotLease, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("mismatch found in %q: (-want,+got):\n%s", base.LeaseKey(queue), diff)
+				t.Errorf("mismatch found in %q: (-want,+got):\n%s", base.LeaseKey("", queue), diff)
 			}
 		}
 	}
@@ -566,19 +566,19 @@ func TestDequeueError(t *testing.T) {
 		for queue, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r.client, queue)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q: (-want,+got):\n%s", base.PendingKey(queue), diff)
+				t.Errorf("mismatch found in %q: (-want,+got):\n%s", base.PendingKey("", queue), diff)
 			}
 		}
 		for queue, want := range tc.wantActive {
 			gotActive := h.GetActiveMessages(t, r.client, queue)
 			if diff := cmp.Diff(want, gotActive, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q: (-want,+got):\n%s", base.ActiveKey(queue), diff)
+				t.Errorf("mismatch found in %q: (-want,+got):\n%s", base.ActiveKey("", queue), diff)
 			}
 		}
 		for queue, want := range tc.wantLease {
 			gotLease := h.GetLeaseEntries(t, r.client, queue)
 			if diff := cmp.Diff(want, gotLease, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("mismatch found in %q: (-want,+got):\n%s", base.LeaseKey(queue), diff)
+				t.Errorf("mismatch found in %q: (-want,+got):\n%s", base.LeaseKey("", queue), diff)
 			}
 		}
 	}
@@ -685,13 +685,13 @@ func TestDequeueIgnoresPausedQueues(t *testing.T) {
 		for queue, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r.client, queue)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q: (-want,+got):\n%s", base.PendingKey(queue), diff)
+				t.Errorf("mismatch found in %q: (-want,+got):\n%s", base.PendingKey("", queue), diff)
 			}
 		}
 		for queue, want := range tc.wantActive {
 			gotActive := h.GetActiveMessages(t, r.client, queue)
 			if diff := cmp.Diff(want, gotActive, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q: (-want,+got):\n%s", base.ActiveKey(queue), diff)
+				t.Errorf("mismatch found in %q: (-want,+got):\n%s", base.ActiveKey("", queue), diff)
 			}
 		}
 	}
@@ -818,19 +818,19 @@ func TestDone(t *testing.T) {
 		for queue, want := range tc.wantActive {
 			gotActive := h.GetActiveMessages(t, r.client, queue)
 			if diff := cmp.Diff(want, gotActive, h.SortMsgOpt); diff != "" {
-				t.Errorf("%s; mismatch found in %q: (-want, +got):\n%s", tc.desc, base.ActiveKey(queue), diff)
+				t.Errorf("%s; mismatch found in %q: (-want, +got):\n%s", tc.desc, base.ActiveKey("", queue), diff)
 				continue
 			}
 		}
 		for queue, want := range tc.wantLease {
 			gotLease := h.GetLeaseEntries(t, r.client, queue)
 			if diff := cmp.Diff(want, gotLease, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("%s; mismatch found in %q: (-want, +got):\n%s", tc.desc, base.LeaseKey(queue), diff)
+				t.Errorf("%s; mismatch found in %q: (-want, +got):\n%s", tc.desc, base.LeaseKey("", queue), diff)
 				continue
 			}
 		}
 
-		processedKey := base.ProcessedKey(tc.target.Queue, time.Now())
+		processedKey := base.ProcessedKey("", tc.target.Queue, time.Now())
 		gotProcessed := r.client.Get(context.Background(), processedKey).Val()
 		if gotProcessed != "1" {
 			t.Errorf("%s; GET %q = %q, want 1", tc.desc, processedKey, gotProcessed)
@@ -840,7 +840,7 @@ func TestDone(t *testing.T) {
 			t.Errorf("%s; TTL %q = %v, want less than or equal to %v", tc.desc, processedKey, gotTTL, statsTTL)
 		}
 
-		processedTotalKey := base.ProcessedTotalKey(tc.target.Queue)
+		processedTotalKey := base.ProcessedTotalKey("", tc.target.Queue)
 		gotProcessedTotal := r.client.Get(context.Background(), processedTotalKey).Val()
 		if gotProcessedTotal != "1" {
 			t.Errorf("%s; GET %q = %q, want 1", tc.desc, processedTotalKey, gotProcessedTotal)
@@ -872,7 +872,7 @@ func TestDoneWithMaxCounter(t *testing.T) {
 	h.SeedLease(t, r.client, []base.Z{z}, msg.Queue)
 	h.SeedActiveQueue(t, r.client, []*base.TaskMessage{msg}, msg.Queue)
 
-	processedTotalKey := base.ProcessedTotalKey(msg.Queue)
+	processedTotalKey := base.ProcessedTotalKey("", msg.Queue)
 	ctx := context.Background()
 	if err := r.client.Set(ctx, processedTotalKey, math.MaxInt64, 0).Err(); err != nil {
 		t.Fatalf("Redis command failed: SET %q %v", processedTotalKey, math.MaxInt64)
@@ -1038,26 +1038,26 @@ func TestMarkAsComplete(t *testing.T) {
 		for queue, want := range tc.wantActive {
 			gotActive := h.GetActiveMessages(t, r.client, queue)
 			if diff := cmp.Diff(want, gotActive, h.SortMsgOpt); diff != "" {
-				t.Errorf("%s; mismatch found in %q: (-want, +got):\n%s", tc.desc, base.ActiveKey(queue), diff)
+				t.Errorf("%s; mismatch found in %q: (-want, +got):\n%s", tc.desc, base.ActiveKey("", queue), diff)
 				continue
 			}
 		}
 		for queue, want := range tc.wantLease {
 			gotLease := h.GetLeaseEntries(t, r.client, queue)
 			if diff := cmp.Diff(want, gotLease, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("%s; mismatch found in %q: (-want, +got):\n%s", tc.desc, base.LeaseKey(queue), diff)
+				t.Errorf("%s; mismatch found in %q: (-want, +got):\n%s", tc.desc, base.LeaseKey("", queue), diff)
 				continue
 			}
 		}
 		for queue, want := range tc.wantCompleted {
 			gotCompleted := h.GetCompletedEntries(t, r.client, queue)
 			if diff := cmp.Diff(want, gotCompleted, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("%s; mismatch found in %q: (-want, +got):\n%s", tc.desc, base.CompletedKey(queue), diff)
+				t.Errorf("%s; mismatch found in %q: (-want, +got):\n%s", tc.desc, base.CompletedKey("", queue), diff)
 				continue
 			}
 		}
 
-		processedKey := base.ProcessedKey(tc.target.Queue, time.Now())
+		processedKey := base.ProcessedKey("", tc.target.Queue, time.Now())
 		gotProcessed := r.client.Get(context.Background(), processedKey).Val()
 		if gotProcessed != "1" {
 			t.Errorf("%s; GET %q = %q, want 1", tc.desc, processedKey, gotProcessed)
@@ -1202,19 +1202,19 @@ func TestRequeue(t *testing.T) {
 		for qname, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey("", qname), diff)
 			}
 		}
 		for qname, want := range tc.wantActive {
 			gotActive := h.GetActiveMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotActive, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q: (-want, +got):\n%s", base.ActiveKey(qname), diff)
+				t.Errorf("mismatch found in %q: (-want, +got):\n%s", base.ActiveKey("", qname), diff)
 			}
 		}
 		for qname, want := range tc.wantLease {
 			gotLease := h.GetLeaseEntries(t, r.client, qname)
 			if diff := cmp.Diff(want, gotLease, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("mismatch found in %q: (-want, +got):\n%s", base.LeaseKey(qname), diff)
+				t.Errorf("mismatch found in %q: (-want, +got):\n%s", base.LeaseKey("", qname), diff)
 			}
 		}
 	}
@@ -1249,7 +1249,7 @@ func TestAddToGroup(t *testing.T) {
 		}
 
 		// Check Group zset has task ID
-		gkey := base.GroupKey(tc.msg.Queue, tc.groupKey)
+		gkey := base.GroupKey("", tc.msg.Queue, tc.groupKey)
 		zs := r.client.ZRangeWithScores(ctx, gkey, 0, -1).Val()
 		if n := len(zs); n != 1 {
 			t.Errorf("Redis ZSET %q contains %d elements, want 1", gkey, n)
@@ -1265,7 +1265,7 @@ func TestAddToGroup(t *testing.T) {
 		}
 
 		// Check the values under the task key.
-		taskKey := base.TaskKey(tc.msg.Queue, tc.msg.ID)
+		taskKey := base.TaskKey("", tc.msg.Queue, tc.msg.ID)
 		encoded := r.client.HGet(ctx, taskKey, "msg").Val() // "msg" field
 		decoded := h.MustUnmarshal(t, encoded)
 		if diff := cmp.Diff(tc.msg, decoded); diff != "" {
@@ -1334,7 +1334,7 @@ func TestAddToGroupUnique(t *testing.T) {
 	now := time.Now()
 	r.SetClock(timeutil.NewSimulatedClock(now))
 	msg := h.NewTaskMessage("mytask", []byte("foo"))
-	msg.UniqueKey = base.UniqueKey(msg.Queue, msg.Type, msg.Payload)
+	msg.UniqueKey = base.UniqueKey("", msg.Queue, msg.Type, msg.Payload)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -1359,7 +1359,7 @@ func TestAddToGroupUnique(t *testing.T) {
 		}
 
 		// Check Group zset has task ID
-		gkey := base.GroupKey(tc.msg.Queue, tc.groupKey)
+		gkey := base.GroupKey("", tc.msg.Queue, tc.groupKey)
 		zs := r.client.ZRangeWithScores(ctx, gkey, 0, -1).Val()
 		if n := len(zs); n != 1 {
 			t.Errorf("Redis ZSET %q contains %d elements, want 1", gkey, n)
@@ -1375,7 +1375,7 @@ func TestAddToGroupUnique(t *testing.T) {
 		}
 
 		// Check the values under the task key.
-		taskKey := base.TaskKey(tc.msg.Queue, tc.msg.ID)
+		taskKey := base.TaskKey("", tc.msg.Queue, tc.msg.ID)
 		encoded := r.client.HGet(ctx, taskKey, "msg").Val() // "msg" field
 		decoded := h.MustUnmarshal(t, encoded)
 		if diff := cmp.Diff(tc.msg, decoded); diff != "" {
@@ -1472,7 +1472,7 @@ func TestSchedule(t *testing.T) {
 		}
 
 		// Check Scheduled zset has task ID.
-		scheduledKey := base.ScheduledKey(tc.msg.Queue)
+		scheduledKey := base.ScheduledKey("", tc.msg.Queue)
 		zs := r.client.ZRangeWithScores(context.Background(), scheduledKey, 0, -1).Val()
 		if n := len(zs); n != 1 {
 			t.Errorf("Redis ZSET %q contains %d elements, want 1", scheduledKey, n)
@@ -1489,7 +1489,7 @@ func TestSchedule(t *testing.T) {
 		}
 
 		// Check the values under the task key.
-		taskKey := base.TaskKey(tc.msg.Queue, tc.msg.ID)
+		taskKey := base.TaskKey("", tc.msg.Queue, tc.msg.ID)
 		encoded := r.client.HGet(context.Background(), taskKey, "msg").Val() // "msg" field
 		decoded := h.MustUnmarshal(t, encoded)
 		if diff := cmp.Diff(tc.msg, decoded); diff != "" {
@@ -1556,7 +1556,7 @@ func TestScheduleUnique(t *testing.T) {
 		Type:      "email",
 		Payload:   h.JSON(map[string]interface{}{"user_id": 123}),
 		Queue:     base.DefaultQueueName,
-		UniqueKey: base.UniqueKey(base.DefaultQueueName, "email", h.JSON(map[string]interface{}{"user_id": 123})),
+		UniqueKey: base.UniqueKey("", base.DefaultQueueName, "email", h.JSON(map[string]interface{}{"user_id": 123})),
 	}
 
 	tests := []struct {
@@ -1578,7 +1578,7 @@ func TestScheduleUnique(t *testing.T) {
 		}
 
 		// Check Scheduled zset has task ID.
-		scheduledKey := base.ScheduledKey(tc.msg.Queue)
+		scheduledKey := base.ScheduledKey("", tc.msg.Queue)
 		zs := r.client.ZRangeWithScores(context.Background(), scheduledKey, 0, -1).Val()
 		if n := len(zs); n != 1 {
 			t.Errorf("Redis ZSET %q contains %d elements, want 1",
@@ -1597,7 +1597,7 @@ func TestScheduleUnique(t *testing.T) {
 		}
 
 		// Check the values under the task key.
-		taskKey := base.TaskKey(tc.msg.Queue, tc.msg.ID)
+		taskKey := base.TaskKey("", tc.msg.Queue, tc.msg.ID)
 		encoded := r.client.HGet(context.Background(), taskKey, "msg").Val() // "msg" field
 		decoded := h.MustUnmarshal(t, encoded)
 		if diff := cmp.Diff(tc.msg, decoded); diff != "" {
@@ -1795,23 +1795,23 @@ func TestRetry(t *testing.T) {
 		for queue, want := range tc.wantActive {
 			gotActive := h.GetActiveMessages(t, r.client, queue)
 			if diff := cmp.Diff(want, gotActive, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ActiveKey(queue), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ActiveKey("", queue), diff)
 			}
 		}
 		for queue, want := range tc.wantLease {
 			gotLease := h.GetLeaseEntries(t, r.client, queue)
 			if diff := cmp.Diff(want, gotLease, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.LeaseKey(queue), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.LeaseKey("", queue), diff)
 			}
 		}
 		for queue, want := range tc.wantRetry {
 			gotRetry := h.GetRetryEntries(t, r.client, queue)
 			if diff := cmp.Diff(want, gotRetry, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.RetryKey(queue), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.RetryKey("", queue), diff)
 			}
 		}
 
-		processedKey := base.ProcessedKey(tc.msg.Queue, time.Now())
+		processedKey := base.ProcessedKey("", tc.msg.Queue, time.Now())
 		gotProcessed := r.client.Get(context.Background(), processedKey).Val()
 		if gotProcessed != "1" {
 			t.Errorf("GET %q = %q, want 1", processedKey, gotProcessed)
@@ -1821,7 +1821,7 @@ func TestRetry(t *testing.T) {
 			t.Errorf("TTL %q = %v, want less than or equal to %v", processedKey, gotTTL, statsTTL)
 		}
 
-		failedKey := base.FailedKey(tc.msg.Queue, time.Now())
+		failedKey := base.FailedKey("", tc.msg.Queue, time.Now())
 		gotFailed := r.client.Get(context.Background(), failedKey).Val()
 		if gotFailed != "1" {
 			t.Errorf("GET %q = %q, want 1", failedKey, gotFailed)
@@ -1831,13 +1831,13 @@ func TestRetry(t *testing.T) {
 			t.Errorf("TTL %q = %v, want less than or equal to %v", failedKey, gotTTL, statsTTL)
 		}
 
-		processedTotalKey := base.ProcessedTotalKey(tc.msg.Queue)
+		processedTotalKey := base.ProcessedTotalKey("", tc.msg.Queue)
 		gotProcessedTotal := r.client.Get(context.Background(), processedTotalKey).Val()
 		if gotProcessedTotal != "1" {
 			t.Errorf("GET %q = %q, want 1", processedTotalKey, gotProcessedTotal)
 		}
 
-		failedTotalKey := base.FailedTotalKey(tc.msg.Queue)
+		failedTotalKey := base.FailedTotalKey("", tc.msg.Queue)
 		gotFailedTotal := r.client.Get(context.Background(), failedTotalKey).Val()
 		if gotFailedTotal != "1" {
 			t.Errorf("GET %q = %q, want 1", failedTotalKey, gotFailedTotal)
@@ -1968,43 +1968,43 @@ func TestRetryWithNonFailureError(t *testing.T) {
 		for queue, want := range tc.wantActive {
 			gotActive := h.GetActiveMessages(t, r.client, queue)
 			if diff := cmp.Diff(want, gotActive, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ActiveKey(queue), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ActiveKey("", queue), diff)
 			}
 		}
 		for queue, want := range tc.wantLease {
 			gotLease := h.GetLeaseEntries(t, r.client, queue)
 			if diff := cmp.Diff(want, gotLease, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.LeaseKey(queue), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.LeaseKey("", queue), diff)
 			}
 		}
 		for queue, want := range tc.wantRetry {
 			gotRetry := h.GetRetryEntries(t, r.client, queue)
 			if diff := cmp.Diff(want, gotRetry, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.RetryKey(queue), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.RetryKey("", queue), diff)
 			}
 		}
 
 		// If isFailure is set to false, no stats should be recorded to avoid skewing the error rate.
-		processedKey := base.ProcessedKey(tc.msg.Queue, time.Now())
+		processedKey := base.ProcessedKey("", tc.msg.Queue, time.Now())
 		gotProcessed := r.client.Get(context.Background(), processedKey).Val()
 		if gotProcessed != "" {
 			t.Errorf("GET %q = %q, want empty", processedKey, gotProcessed)
 		}
 
 		// If isFailure is set to false, no stats should be recorded to avoid skewing the error rate.
-		failedKey := base.FailedKey(tc.msg.Queue, time.Now())
+		failedKey := base.FailedKey("", tc.msg.Queue, time.Now())
 		gotFailed := r.client.Get(context.Background(), failedKey).Val()
 		if gotFailed != "" {
 			t.Errorf("GET %q = %q, want empty", failedKey, gotFailed)
 		}
 
-		processedTotalKey := base.ProcessedTotalKey(tc.msg.Queue)
+		processedTotalKey := base.ProcessedTotalKey("", tc.msg.Queue)
 		gotProcessedTotal := r.client.Get(context.Background(), processedTotalKey).Val()
 		if gotProcessedTotal != "" {
 			t.Errorf("GET %q = %q, want empty", processedTotalKey, gotProcessedTotal)
 		}
 
-		failedTotalKey := base.FailedTotalKey(tc.msg.Queue)
+		failedTotalKey := base.FailedTotalKey("", tc.msg.Queue)
 		gotFailedTotal := r.client.Get(context.Background(), failedTotalKey).Val()
 		if gotFailedTotal != "" {
 			t.Errorf("GET %q = %q, want empty", failedTotalKey, gotFailedTotal)
@@ -2173,23 +2173,23 @@ func TestArchive(t *testing.T) {
 		for queue, want := range tc.wantActive {
 			gotActive := h.GetActiveMessages(t, r.client, queue)
 			if diff := cmp.Diff(want, gotActive, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q: (-want, +got)\n%s", base.ActiveKey(queue), diff)
+				t.Errorf("mismatch found in %q: (-want, +got)\n%s", base.ActiveKey("", queue), diff)
 			}
 		}
 		for queue, want := range tc.wantLease {
 			gotLease := h.GetLeaseEntries(t, r.client, queue)
 			if diff := cmp.Diff(want, gotLease, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("mismatch found in %q after calling (*RDB).Archive: (-want, +got):\n%s", base.LeaseKey(queue), diff)
+				t.Errorf("mismatch found in %q after calling (*RDB).Archive: (-want, +got):\n%s", base.LeaseKey("", queue), diff)
 			}
 		}
 		for queue, want := range tc.wantArchived {
 			gotArchived := h.GetArchivedEntries(t, r.client, queue)
 			if diff := cmp.Diff(want, gotArchived, h.SortZSetEntryOpt, zScoreCmpOpt, timeCmpOpt); diff != "" {
-				t.Errorf("mismatch found in %q after calling (*RDB).Archive: (-want, +got):\n%s", base.ArchivedKey(queue), diff)
+				t.Errorf("mismatch found in %q after calling (*RDB).Archive: (-want, +got):\n%s", base.ArchivedKey("", queue), diff)
 			}
 		}
 
-		processedKey := base.ProcessedKey(tc.target.Queue, time.Now())
+		processedKey := base.ProcessedKey("", tc.target.Queue, time.Now())
 		gotProcessed := r.client.Get(context.Background(), processedKey).Val()
 		if gotProcessed != "1" {
 			t.Errorf("GET %q = %q, want 1", processedKey, gotProcessed)
@@ -2199,7 +2199,7 @@ func TestArchive(t *testing.T) {
 			t.Errorf("TTL %q = %v, want less than or equal to %v", processedKey, gotTTL, statsTTL)
 		}
 
-		failedKey := base.FailedKey(tc.target.Queue, time.Now())
+		failedKey := base.FailedKey("", tc.target.Queue, time.Now())
 		gotFailed := r.client.Get(context.Background(), failedKey).Val()
 		if gotFailed != "1" {
 			t.Errorf("GET %q = %q, want 1", failedKey, gotFailed)
@@ -2209,13 +2209,13 @@ func TestArchive(t *testing.T) {
 			t.Errorf("TTL %q = %v, want less than or equal to %v", failedKey, gotTTL, statsTTL)
 		}
 
-		processedTotalKey := base.ProcessedTotalKey(tc.target.Queue)
+		processedTotalKey := base.ProcessedTotalKey("", tc.target.Queue)
 		gotProcessedTotal := r.client.Get(context.Background(), processedTotalKey).Val()
 		if gotProcessedTotal != "1" {
 			t.Errorf("GET %q = %q, want 1", processedTotalKey, gotProcessedTotal)
 		}
 
-		failedTotalKey := base.FailedTotalKey(tc.target.Queue)
+		failedTotalKey := base.FailedTotalKey("", tc.target.Queue)
 		gotFailedTotal := r.client.Get(context.Background(), failedTotalKey).Val()
 		if gotFailedTotal != "1" {
 			t.Errorf("GET %q = %q, want 1", failedTotalKey, gotFailedTotal)
@@ -2353,11 +2353,11 @@ func TestArchiveTrim(t *testing.T) {
 			gotArchived := h.GetArchivedEntries(t, r.client, queue)
 
 			if diff := cmp.Diff(want, gotArchived, h.SortZSetEntryOpt, zScoreCmpOpt, timeCmpOpt); diff != "" {
-				t.Errorf("mismatch found in %q after calling (*RDB).Archive: (-want, +got):\n%s", base.ArchivedKey(queue), diff)
+				t.Errorf("mismatch found in %q after calling (*RDB).Archive: (-want, +got):\n%s", base.ArchivedKey("", queue), diff)
 			}
 
 			// check that only keys present in the archived set are in rdb
-			vals := r.client.Keys(context.Background(), base.TaskKeyPrefix(queue)+"*").Val()
+			vals := r.client.Keys(context.Background(), base.TaskKeyPrefix("", queue)+"*").Val()
 			if len(vals) != len(gotArchived) {
 				t.Errorf("len of keys = %v, want %v", len(vals), len(gotArchived))
 				return
@@ -2491,11 +2491,11 @@ func TestForwardIfReadyWithGroup(t *testing.T) {
 		for qname, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey("", qname), diff)
 			}
 			// Make sure "pending_since" field is set
 			for _, msg := range gotPending {
-				pendingSince := r.client.HGet(ctx, base.TaskKey(msg.Queue, msg.ID), "pending_since").Val()
+				pendingSince := r.client.HGet(ctx, base.TaskKey("", msg.Queue, msg.ID), "pending_since").Val()
 				if want := strconv.Itoa(int(now.UnixNano())); pendingSince != want {
 					t.Error("pending_since field is not set for newly pending message")
 				}
@@ -2504,20 +2504,20 @@ func TestForwardIfReadyWithGroup(t *testing.T) {
 		for qname, want := range tc.wantScheduled {
 			gotScheduled := h.GetScheduledMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotScheduled, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ScheduledKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ScheduledKey("", qname), diff)
 			}
 		}
 		for qname, want := range tc.wantRetry {
 			gotRetry := h.GetRetryMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotRetry, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.RetryKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.RetryKey("", qname), diff)
 			}
 		}
 		for qname, groups := range tc.wantGroup {
 			for groupKey, wantGroup := range groups {
 				gotGroup := h.GetGroupEntries(t, r.client, qname, groupKey)
 				if diff := cmp.Diff(wantGroup, gotGroup, h.SortZSetEntryOpt); diff != "" {
-					t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.GroupKey(qname, groupKey), diff)
+					t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.GroupKey("", qname, groupKey), diff)
 				}
 			}
 		}
@@ -2653,11 +2653,11 @@ func TestForwardIfReady(t *testing.T) {
 		for qname, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey("", qname), diff)
 			}
 			// Make sure "pending_since" field is set
 			for _, msg := range gotPending {
-				pendingSince := r.client.HGet(context.Background(), base.TaskKey(msg.Queue, msg.ID), "pending_since").Val()
+				pendingSince := r.client.HGet(context.Background(), base.TaskKey("", msg.Queue, msg.ID), "pending_since").Val()
 				if want := strconv.Itoa(int(now.UnixNano())); pendingSince != want {
 					t.Error("pending_since field is not set for newly pending message")
 				}
@@ -2666,13 +2666,13 @@ func TestForwardIfReady(t *testing.T) {
 		for qname, want := range tc.wantScheduled {
 			gotScheduled := h.GetScheduledMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotScheduled, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ScheduledKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ScheduledKey("", qname), diff)
 			}
 		}
 		for qname, want := range tc.wantRetry {
 			gotRetry := h.GetRetryMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotRetry, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.RetryKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.RetryKey("", qname), diff)
 			}
 		}
 	}
@@ -2951,7 +2951,7 @@ func TestExtendLease(t *testing.T) {
 		for qname, want := range tc.wantLease {
 			gotLease := h.GetLeaseEntries(t, r.client, qname)
 			if diff := cmp.Diff(want, gotLease, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("%s: mismatch found in %q: (-want,+got):\n%s", tc.desc, base.LeaseKey(qname), diff)
+				t.Errorf("%s: mismatch found in %q: (-want,+got):\n%s", tc.desc, base.LeaseKey("", qname), diff)
 			}
 		}
 	}
@@ -2987,7 +2987,7 @@ func TestWriteServerState(t *testing.T) {
 	}
 
 	// Check ServerInfo was written correctly.
-	skey := base.ServerInfoKey(host, pid, serverID)
+	skey := base.ServerInfoKey("", host, pid, serverID)
 	data := r.client.Get(context.Background(), skey).Val()
 	got, err := base.DecodeServerInfo([]byte(data))
 	if err != nil {
@@ -3010,7 +3010,7 @@ func TestWriteServerState(t *testing.T) {
 	}
 
 	// Check WorkersInfo was written correctly.
-	wkey := base.WorkersKey(host, pid, serverID)
+	wkey := base.WorkersKey("", host, pid, serverID)
 	workerExist := r.client.Exists(context.Background(), wkey).Val()
 	if workerExist != 0 {
 		t.Errorf("%q key exists", wkey)
@@ -3077,7 +3077,7 @@ func TestWriteServerStateWithWorkers(t *testing.T) {
 	}
 
 	// Check ServerInfo was written correctly.
-	skey := base.ServerInfoKey(host, pid, serverID)
+	skey := base.ServerInfoKey("", host, pid, serverID)
 	data := r.client.Get(context.Background(), skey).Val()
 	got, err := base.DecodeServerInfo([]byte(data))
 	if err != nil {
@@ -3100,7 +3100,7 @@ func TestWriteServerStateWithWorkers(t *testing.T) {
 	}
 
 	// Check WorkersInfo was written correctly.
-	wkey := base.WorkersKey(host, pid, serverID)
+	wkey := base.WorkersKey("", host, pid, serverID)
 	wdata := r.client.HGetAll(context.Background(), wkey).Val()
 	if len(wdata) != 2 {
 		t.Fatalf("HGETALL %q returned a hash of size %d, want 2", wkey, len(wdata))
@@ -3209,10 +3209,10 @@ func TestClearServerState(t *testing.T) {
 		t.Fatalf("(*RDB).ClearServerState failed: %v", err)
 	}
 
-	skey := base.ServerInfoKey(host, pid, serverID)
-	wkey := base.WorkersKey(host, pid, serverID)
-	otherSKey := base.ServerInfoKey(otherHost, otherPID, otherServerID)
-	otherWKey := base.WorkersKey(otherHost, otherPID, otherServerID)
+	skey := base.ServerInfoKey("", host, pid, serverID)
+	wkey := base.WorkersKey("", host, pid, serverID)
+	otherSKey := base.ServerInfoKey("", otherHost, otherPID, otherServerID)
+	otherWKey := base.WorkersKey("", otherHost, otherPID, otherServerID)
 	// Check all keys are cleared.
 	if r.client.Exists(context.Background(), skey).Val() != 0 {
 		t.Errorf("Redis key %q exists", skey)
@@ -3302,7 +3302,7 @@ func TestWriteResult(t *testing.T) {
 			t.Errorf("WriteResult returned %d, want %d", n, len(tc.data))
 		}
 
-		taskKey := base.TaskKey(tc.qname, tc.taskID)
+		taskKey := base.TaskKey("", tc.qname, tc.taskID)
 		got := r.client.HGet(context.Background(), taskKey, "result").Val()
 		if got != string(tc.data) {
 			t.Errorf("`result` field under %q key is set to %q, want %q", taskKey, got, string(tc.data))
@@ -3348,10 +3348,10 @@ func TestAggregationCheck(t *testing.T) {
 			desc:  "with an empty group",
 			tasks: []*h.TaskSeedData{},
 			groups: map[string][]redis.Z{
-				base.GroupKey("default", "mygroup"): {},
+				base.GroupKey("", "default", "mygroup"): {},
 			},
 			allGroups: map[string][]string{
-				base.AllGroups("default"): {},
+				base.AllGroups("", "default"): {},
 			},
 			qname:              "default",
 			gname:              "mygroup",
@@ -3361,7 +3361,7 @@ func TestAggregationCheck(t *testing.T) {
 			shouldCreateSet:    false,
 			wantAggregationSet: nil,
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "mygroup"): {},
+				base.GroupKey("", "default", "mygroup"): {},
 			},
 			shouldClearGroup: true,
 		},
@@ -3375,7 +3375,7 @@ func TestAggregationCheck(t *testing.T) {
 				{Msg: msg5, State: base.TaskStateAggregating},
 			},
 			groups: map[string][]redis.Z{
-				base.GroupKey("default", "mygroup"): {
+				base.GroupKey("", "default", "mygroup"): {
 					{Member: msg1.ID, Score: float64(now.Add(-5 * time.Minute).Unix())},
 					{Member: msg2.ID, Score: float64(now.Add(-3 * time.Minute).Unix())},
 					{Member: msg3.ID, Score: float64(now.Add(-2 * time.Minute).Unix())},
@@ -3384,7 +3384,7 @@ func TestAggregationCheck(t *testing.T) {
 				},
 			},
 			allGroups: map[string][]string{
-				base.AllGroups("default"): {"mygroup"},
+				base.AllGroups("", "default"): {"mygroup"},
 			},
 			qname:              "default",
 			gname:              "mygroup",
@@ -3394,7 +3394,7 @@ func TestAggregationCheck(t *testing.T) {
 			shouldCreateSet:    true,
 			wantAggregationSet: []*base.TaskMessage{msg1, msg2, msg3, msg4, msg5},
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "mygroup"): {},
+				base.GroupKey("", "default", "mygroup"): {},
 			},
 			shouldClearGroup: true,
 		},
@@ -3408,7 +3408,7 @@ func TestAggregationCheck(t *testing.T) {
 				{Msg: msg5, State: base.TaskStateAggregating},
 			},
 			groups: map[string][]redis.Z{
-				base.GroupKey("default", "mygroup"): {
+				base.GroupKey("", "default", "mygroup"): {
 					{Member: msg1.ID, Score: float64(now.Add(-5 * time.Minute).Unix())},
 					{Member: msg2.ID, Score: float64(now.Add(-3 * time.Minute).Unix())},
 					{Member: msg3.ID, Score: float64(now.Add(-2 * time.Minute).Unix())},
@@ -3417,7 +3417,7 @@ func TestAggregationCheck(t *testing.T) {
 				},
 			},
 			allGroups: map[string][]string{
-				base.AllGroups("default"): {"mygroup"},
+				base.AllGroups("", "default"): {"mygroup"},
 			},
 			qname:              "default",
 			gname:              "mygroup",
@@ -3427,7 +3427,7 @@ func TestAggregationCheck(t *testing.T) {
 			shouldCreateSet:    true,
 			wantAggregationSet: []*base.TaskMessage{msg1, msg2, msg3},
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "mygroup"): {
+				base.GroupKey("", "default", "mygroup"): {
 					{Member: msg4.ID, Score: float64(now.Add(-1 * time.Minute).Unix())},
 					{Member: msg5.ID, Score: float64(now.Add(-10 * time.Second).Unix())},
 				},
@@ -3442,14 +3442,14 @@ func TestAggregationCheck(t *testing.T) {
 				{Msg: msg3, State: base.TaskStateAggregating},
 			},
 			groups: map[string][]redis.Z{
-				base.GroupKey("default", "mygroup"): {
+				base.GroupKey("", "default", "mygroup"): {
 					{Member: msg1.ID, Score: float64(now.Add(-5 * time.Minute).Unix())},
 					{Member: msg2.ID, Score: float64(now.Add(-3 * time.Minute).Unix())},
 					{Member: msg3.ID, Score: float64(now.Add(-2 * time.Minute).Unix())},
 				},
 			},
 			allGroups: map[string][]string{
-				base.AllGroups("default"): {"mygroup"},
+				base.AllGroups("", "default"): {"mygroup"},
 			},
 			qname:              "default",
 			gname:              "mygroup",
@@ -3459,7 +3459,7 @@ func TestAggregationCheck(t *testing.T) {
 			shouldCreateSet:    true,
 			wantAggregationSet: []*base.TaskMessage{msg1, msg2, msg3},
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "mygroup"): {},
+				base.GroupKey("", "default", "mygroup"): {},
 			},
 			shouldClearGroup: true,
 		},
@@ -3473,7 +3473,7 @@ func TestAggregationCheck(t *testing.T) {
 				{Msg: msg5, State: base.TaskStateAggregating},
 			},
 			groups: map[string][]redis.Z{
-				base.GroupKey("default", "mygroup"): {
+				base.GroupKey("", "default", "mygroup"): {
 					{Member: msg1.ID, Score: float64(now.Add(-15 * time.Minute).Unix())},
 					{Member: msg2.ID, Score: float64(now.Add(-3 * time.Minute).Unix())},
 					{Member: msg3.ID, Score: float64(now.Add(-2 * time.Minute).Unix())},
@@ -3482,7 +3482,7 @@ func TestAggregationCheck(t *testing.T) {
 				},
 			},
 			allGroups: map[string][]string{
-				base.AllGroups("default"): {"mygroup"},
+				base.AllGroups("", "default"): {"mygroup"},
 			},
 			qname:              "default",
 			gname:              "mygroup",
@@ -3492,7 +3492,7 @@ func TestAggregationCheck(t *testing.T) {
 			shouldCreateSet:    true,
 			wantAggregationSet: []*base.TaskMessage{msg1, msg2, msg3, msg4, msg5},
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "mygroup"): {},
+				base.GroupKey("", "default", "mygroup"): {},
 			},
 			shouldClearGroup: true,
 		},
@@ -3506,7 +3506,7 @@ func TestAggregationCheck(t *testing.T) {
 				{Msg: msg5, State: base.TaskStateAggregating},
 			},
 			groups: map[string][]redis.Z{
-				base.GroupKey("default", "mygroup"): {
+				base.GroupKey("", "default", "mygroup"): {
 					{Member: msg1.ID, Score: float64(now.Add(-15 * time.Minute).Unix())},
 					{Member: msg2.ID, Score: float64(now.Add(-3 * time.Minute).Unix())},
 					{Member: msg3.ID, Score: float64(now.Add(-2 * time.Minute).Unix())},
@@ -3515,7 +3515,7 @@ func TestAggregationCheck(t *testing.T) {
 				},
 			},
 			allGroups: map[string][]string{
-				base.AllGroups("default"): {"mygroup"},
+				base.AllGroups("", "default"): {"mygroup"},
 			},
 			qname:              "default",
 			gname:              "mygroup",
@@ -3525,7 +3525,7 @@ func TestAggregationCheck(t *testing.T) {
 			shouldCreateSet:    false,
 			wantAggregationSet: nil,
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "mygroup"): {
+				base.GroupKey("", "default", "mygroup"): {
 					{Member: msg1.ID, Score: float64(now.Add(-15 * time.Minute).Unix())},
 					{Member: msg2.ID, Score: float64(now.Add(-3 * time.Minute).Unix())},
 					{Member: msg3.ID, Score: float64(now.Add(-2 * time.Minute).Unix())},
@@ -3545,7 +3545,7 @@ func TestAggregationCheck(t *testing.T) {
 				{Msg: msg5, State: base.TaskStateAggregating},
 			},
 			groups: map[string][]redis.Z{
-				base.GroupKey("default", "mygroup"): {
+				base.GroupKey("", "default", "mygroup"): {
 					{Member: msg1.ID, Score: float64(now.Add(-15 * time.Minute).Unix())},
 					{Member: msg2.ID, Score: float64(now.Add(-3 * time.Minute).Unix())},
 					{Member: msg3.ID, Score: float64(now.Add(-2 * time.Minute).Unix())},
@@ -3554,7 +3554,7 @@ func TestAggregationCheck(t *testing.T) {
 				},
 			},
 			allGroups: map[string][]string{
-				base.AllGroups("default"): {"mygroup"},
+				base.AllGroups("", "default"): {"mygroup"},
 			},
 			qname:              "default",
 			gname:              "mygroup",
@@ -3564,7 +3564,7 @@ func TestAggregationCheck(t *testing.T) {
 			shouldCreateSet:    true,
 			wantAggregationSet: []*base.TaskMessage{msg1, msg2, msg3, msg4, msg5},
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "mygroup"): {},
+				base.GroupKey("", "default", "mygroup"): {},
 			},
 			shouldClearGroup: true,
 		},
@@ -3578,7 +3578,7 @@ func TestAggregationCheck(t *testing.T) {
 				{Msg: msg5, State: base.TaskStateAggregating},
 			},
 			groups: map[string][]redis.Z{
-				base.GroupKey("default", "mygroup"): {
+				base.GroupKey("", "default", "mygroup"): {
 					{Member: msg1.ID, Score: float64(now.Add(-15 * time.Minute).Unix())},
 					{Member: msg2.ID, Score: float64(now.Add(-3 * time.Minute).Unix())},
 					{Member: msg3.ID, Score: float64(now.Add(-2 * time.Minute).Unix())},
@@ -3587,7 +3587,7 @@ func TestAggregationCheck(t *testing.T) {
 				},
 			},
 			allGroups: map[string][]string{
-				base.AllGroups("default"): {"mygroup"},
+				base.AllGroups("", "default"): {"mygroup"},
 			},
 			qname:              "default",
 			gname:              "mygroup",
@@ -3597,7 +3597,7 @@ func TestAggregationCheck(t *testing.T) {
 			shouldCreateSet:    false,
 			wantAggregationSet: nil,
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "mygroup"): {
+				base.GroupKey("", "default", "mygroup"): {
 					{Member: msg1.ID, Score: float64(now.Add(-15 * time.Minute).Unix())},
 					{Member: msg2.ID, Score: float64(now.Add(-3 * time.Minute).Unix())},
 					{Member: msg3.ID, Score: float64(now.Add(-2 * time.Minute).Unix())},
@@ -3646,18 +3646,18 @@ func TestAggregationCheck(t *testing.T) {
 			h.AssertRedisZSets(t, r.client, tc.wantGroups)
 
 			if tc.shouldClearGroup {
-				if key := base.GroupKey(tc.qname, tc.gname); r.client.Exists(ctx, key).Val() != 0 {
+				if key := base.GroupKey("", tc.qname, tc.gname); r.client.Exists(ctx, key).Val() != 0 {
 					t.Errorf("group key %q still exists", key)
 				}
-				if r.client.SIsMember(ctx, base.AllGroups(tc.qname), tc.gname).Val() {
-					t.Errorf("all-group set %q still contains the group name %q", base.AllGroups(tc.qname), tc.gname)
+				if r.client.SIsMember(ctx, base.AllGroups("", tc.qname), tc.gname).Val() {
+					t.Errorf("all-group set %q still contains the group name %q", base.AllGroups("", tc.qname), tc.gname)
 				}
 			} else {
-				if key := base.GroupKey(tc.qname, tc.gname); r.client.Exists(ctx, key).Val() == 0 {
+				if key := base.GroupKey("", tc.qname, tc.gname); r.client.Exists(ctx, key).Val() == 0 {
 					t.Errorf("group key %q does not exists", key)
 				}
-				if !r.client.SIsMember(ctx, base.AllGroups(tc.qname), tc.gname).Val() {
-					t.Errorf("all-group set %q doesn't contains the group name %q", base.AllGroups(tc.qname), tc.gname)
+				if !r.client.SIsMember(ctx, base.AllGroups("", tc.qname), tc.gname).Val() {
+					t.Errorf("all-group set %q doesn't contains the group name %q", base.AllGroups("", tc.qname), tc.gname)
 				}
 			}
 		})
@@ -3701,15 +3701,15 @@ func TestDeleteAggregationSet(t *testing.T) {
 				{Msg: m3, State: base.TaskStateAggregating},
 			},
 			aggregationSets: map[string][]redis.Z{
-				base.AggregationSetKey("default", "mygroup", setID): {
+				base.AggregationSetKey("", "default", "mygroup", setID): {
 					{Member: m1.ID, Score: float64(now.Add(-5 * time.Minute).Unix())},
 					{Member: m2.ID, Score: float64(now.Add(-4 * time.Minute).Unix())},
 					{Member: m3.ID, Score: float64(now.Add(-3 * time.Minute).Unix())},
 				},
 			},
 			allAggregationSets: map[string][]redis.Z{
-				base.AllAggregationSets("default"): {
-					{Member: base.AggregationSetKey("default", "mygroup", setID), Score: float64(now.Add(aggregationTimeout).Unix())},
+				base.AllAggregationSets("", "default"): {
+					{Member: base.AggregationSetKey("", "default", "mygroup", setID), Score: float64(now.Add(aggregationTimeout).Unix())},
 				},
 			},
 			ctx:   context.Background(),
@@ -3717,14 +3717,14 @@ func TestDeleteAggregationSet(t *testing.T) {
 			gname: "mygroup",
 			setID: setID,
 			wantDeletedKeys: []string{
-				base.AggregationSetKey("default", "mygroup", setID),
-				base.TaskKey(m1.Queue, m1.ID),
-				base.TaskKey(m2.Queue, m2.ID),
-				base.TaskKey(m3.Queue, m3.ID),
+				base.AggregationSetKey("", "default", "mygroup", setID),
+				base.TaskKey("", m1.Queue, m1.ID),
+				base.TaskKey("", m2.Queue, m2.ID),
+				base.TaskKey("", m3.Queue, m3.ID),
 			},
 			wantAggregationSets: map[string][]redis.Z{},
 			wantAllAggregationSets: map[string][]redis.Z{
-				base.AllAggregationSets("default"): {},
+				base.AllAggregationSets("", "default"): {},
 			},
 		},
 		{
@@ -3735,18 +3735,18 @@ func TestDeleteAggregationSet(t *testing.T) {
 				{Msg: m3, State: base.TaskStateAggregating},
 			},
 			aggregationSets: map[string][]redis.Z{
-				base.AggregationSetKey("default", "mygroup", setID): {
+				base.AggregationSetKey("", "default", "mygroup", setID): {
 					{Member: m1.ID, Score: float64(now.Add(-5 * time.Minute).Unix())},
 				},
-				base.AggregationSetKey("default", "mygroup", otherSetID): {
+				base.AggregationSetKey("", "default", "mygroup", otherSetID): {
 					{Member: m2.ID, Score: float64(now.Add(-4 * time.Minute).Unix())},
 					{Member: m3.ID, Score: float64(now.Add(-3 * time.Minute).Unix())},
 				},
 			},
 			allAggregationSets: map[string][]redis.Z{
-				base.AllAggregationSets("default"): {
-					{Member: base.AggregationSetKey("default", "mygroup", setID), Score: float64(now.Add(aggregationTimeout).Unix())},
-					{Member: base.AggregationSetKey("default", "mygroup", otherSetID), Score: float64(now.Add(aggregationTimeout).Unix())},
+				base.AllAggregationSets("", "default"): {
+					{Member: base.AggregationSetKey("", "default", "mygroup", setID), Score: float64(now.Add(aggregationTimeout).Unix())},
+					{Member: base.AggregationSetKey("", "default", "mygroup", otherSetID), Score: float64(now.Add(aggregationTimeout).Unix())},
 				},
 			},
 			ctx:   context.Background(),
@@ -3754,18 +3754,18 @@ func TestDeleteAggregationSet(t *testing.T) {
 			gname: "mygroup",
 			setID: setID,
 			wantDeletedKeys: []string{
-				base.AggregationSetKey("default", "mygroup", setID),
-				base.TaskKey(m1.Queue, m1.ID),
+				base.AggregationSetKey("", "default", "mygroup", setID),
+				base.TaskKey("", m1.Queue, m1.ID),
 			},
 			wantAggregationSets: map[string][]redis.Z{
-				base.AggregationSetKey("default", "mygroup", otherSetID): {
+				base.AggregationSetKey("", "default", "mygroup", otherSetID): {
 					{Member: m2.ID, Score: float64(now.Add(-4 * time.Minute).Unix())},
 					{Member: m3.ID, Score: float64(now.Add(-3 * time.Minute).Unix())},
 				},
 			},
 			wantAllAggregationSets: map[string][]redis.Z{
-				base.AllAggregationSets("default"): {
-					{Member: base.AggregationSetKey("default", "mygroup", otherSetID), Score: float64(now.Add(aggregationTimeout).Unix())},
+				base.AllAggregationSets("", "default"): {
+					{Member: base.AggregationSetKey("", "default", "mygroup", otherSetID), Score: float64(now.Add(aggregationTimeout).Unix())},
 				},
 			},
 		},
@@ -3829,15 +3829,15 @@ func TestDeleteAggregationSetError(t *testing.T) {
 				{Msg: m3, State: base.TaskStateAggregating},
 			},
 			aggregationSets: map[string][]redis.Z{
-				base.AggregationSetKey("default", "mygroup", setID): {
+				base.AggregationSetKey("", "default", "mygroup", setID): {
 					{Member: m1.ID, Score: float64(now.Add(-5 * time.Minute).Unix())},
 					{Member: m2.ID, Score: float64(now.Add(-4 * time.Minute).Unix())},
 					{Member: m3.ID, Score: float64(now.Add(-3 * time.Minute).Unix())},
 				},
 			},
 			allAggregationSets: map[string][]redis.Z{
-				base.AllAggregationSets("default"): {
-					{Member: base.AggregationSetKey("default", "mygroup", setID), Score: float64(now.Add(aggregationTimeout).Unix())},
+				base.AllAggregationSets("", "default"): {
+					{Member: base.AggregationSetKey("", "default", "mygroup", setID), Score: float64(now.Add(aggregationTimeout).Unix())},
 				},
 			},
 			ctx:   deadlineExceededCtx,
@@ -3846,7 +3846,7 @@ func TestDeleteAggregationSetError(t *testing.T) {
 			setID: setID,
 			// want data unchanged.
 			wantAggregationSets: map[string][]redis.Z{
-				base.AggregationSetKey("default", "mygroup", setID): {
+				base.AggregationSetKey("", "default", "mygroup", setID): {
 					{Member: m1.ID, Score: float64(now.Add(-5 * time.Minute).Unix())},
 					{Member: m2.ID, Score: float64(now.Add(-4 * time.Minute).Unix())},
 					{Member: m3.ID, Score: float64(now.Add(-3 * time.Minute).Unix())},
@@ -3854,8 +3854,8 @@ func TestDeleteAggregationSetError(t *testing.T) {
 			},
 			// want data unchanged.
 			wantAllAggregationSets: map[string][]redis.Z{
-				base.AllAggregationSets("default"): {
-					{Member: base.AggregationSetKey("default", "mygroup", setID), Score: float64(now.Add(aggregationTimeout).Unix())},
+				base.AllAggregationSets("", "default"): {
+					{Member: base.AggregationSetKey("", "default", "mygroup", setID), Score: float64(now.Add(aggregationTimeout).Unix())},
 				},
 			},
 		},
@@ -3904,46 +3904,46 @@ func TestReclaimStaleAggregationSets(t *testing.T) {
 	}{
 		{
 			groups: map[string][]redis.Z{
-				base.GroupKey("default", "foo"): {},
-				base.GroupKey("default", "bar"): {},
-				base.GroupKey("default", "qux"): {
+				base.GroupKey("", "default", "foo"): {},
+				base.GroupKey("", "default", "bar"): {},
+				base.GroupKey("", "default", "qux"): {
 					{Member: m4.ID, Score: float64(now.Add(-10 * time.Second).Unix())},
 				},
 			},
 			aggregationSets: map[string][]redis.Z{
-				base.AggregationSetKey("default", "foo", "set1"): {
+				base.AggregationSetKey("", "default", "foo", "set1"): {
 					{Member: m1.ID, Score: float64(now.Add(-3 * time.Minute).Unix())},
 					{Member: m2.ID, Score: float64(now.Add(-4 * time.Minute).Unix())},
 				},
-				base.AggregationSetKey("default", "bar", "set2"): {
+				base.AggregationSetKey("", "default", "bar", "set2"): {
 					{Member: m3.ID, Score: float64(now.Add(-1 * time.Minute).Unix())},
 				},
 			},
 			allAggregationSets: map[string][]redis.Z{
-				base.AllAggregationSets("default"): {
-					{Member: base.AggregationSetKey("default", "foo", "set1"), Score: float64(now.Add(-10 * time.Second).Unix())}, // set1 is expired
-					{Member: base.AggregationSetKey("default", "bar", "set2"), Score: float64(now.Add(40 * time.Second).Unix())},  // set2 is not expired
+				base.AllAggregationSets("", "default"): {
+					{Member: base.AggregationSetKey("", "default", "foo", "set1"), Score: float64(now.Add(-10 * time.Second).Unix())}, // set1 is expired
+					{Member: base.AggregationSetKey("", "default", "bar", "set2"), Score: float64(now.Add(40 * time.Second).Unix())},  // set2 is not expired
 				},
 			},
 			qname: "default",
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "foo"): {
+				base.GroupKey("", "default", "foo"): {
 					{Member: m1.ID, Score: float64(now.Add(-3 * time.Minute).Unix())},
 					{Member: m2.ID, Score: float64(now.Add(-4 * time.Minute).Unix())},
 				},
-				base.GroupKey("default", "bar"): {},
-				base.GroupKey("default", "qux"): {
+				base.GroupKey("", "default", "bar"): {},
+				base.GroupKey("", "default", "qux"): {
 					{Member: m4.ID, Score: float64(now.Add(-10 * time.Second).Unix())},
 				},
 			},
 			wantAggregationSets: map[string][]redis.Z{
-				base.AggregationSetKey("default", "bar", "set2"): {
+				base.AggregationSetKey("", "default", "bar", "set2"): {
 					{Member: m3.ID, Score: float64(now.Add(-1 * time.Minute).Unix())},
 				},
 			},
 			wantAllAggregationSets: map[string][]redis.Z{
-				base.AllAggregationSets("default"): {
-					{Member: base.AggregationSetKey("default", "bar", "set2"), Score: float64(now.Add(40 * time.Second).Unix())},
+				base.AllAggregationSets("", "default"): {
+					{Member: base.AggregationSetKey("", "default", "bar", "set2"), Score: float64(now.Add(40 * time.Second).Unix())},
 				},
 			},
 		},

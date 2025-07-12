@@ -236,7 +236,7 @@ func TestHeartbeater(t *testing.T) {
 		for qname, wantLease := range tc.wantLease1 {
 			gotLease := h.GetLeaseEntries(t, r, qname)
 			if diff := cmp.Diff(wantLease, gotLease, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("%s: mismatch found in %q: (-want,+got):\n%s", tc.desc, base.LeaseKey(qname), diff)
+				t.Errorf("%s: mismatch found in %q: (-want,+got):\n%s", tc.desc, base.LeaseKey("", qname), diff)
 			}
 		}
 
@@ -264,7 +264,7 @@ func TestHeartbeater(t *testing.T) {
 		for qname, wantLease := range tc.wantLease2 {
 			gotLease := h.GetLeaseEntries(t, r, qname)
 			if diff := cmp.Diff(wantLease, gotLease, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("%s: mismatch found in %q: (-want,+got):\n%s", tc.desc, base.LeaseKey(qname), diff)
+				t.Errorf("%s: mismatch found in %q: (-want,+got):\n%s", tc.desc, base.LeaseKey("", qname), diff)
 			}
 		}
 

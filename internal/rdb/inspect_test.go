@@ -99,43 +99,43 @@ func TestCurrentStats(t *testing.T) {
 			},
 			allQueues: []string{"default", "critical", "low"},
 			allGroups: map[string][]string{
-				base.AllGroups("default"): {"sms:user1"},
+				base.AllGroups("", "default"): {"sms:user1"},
 			},
 			pending: map[string][]string{
-				base.PendingKey("default"):  {m1.ID},
-				base.PendingKey("critical"): {m5.ID},
-				base.PendingKey("low"):      {m6.ID},
+				base.PendingKey("", "default"):  {m1.ID},
+				base.PendingKey("", "critical"): {m5.ID},
+				base.PendingKey("", "low"):      {m6.ID},
 			},
 			active: map[string][]string{
-				base.ActiveKey("default"):  {m2.ID},
-				base.ActiveKey("critical"): {},
-				base.ActiveKey("low"):      {},
+				base.ActiveKey("", "default"):  {m2.ID},
+				base.ActiveKey("", "critical"): {},
+				base.ActiveKey("", "low"):      {},
 			},
 			scheduled: map[string][]redis.Z{
-				base.ScheduledKey("default"): {
+				base.ScheduledKey("", "default"): {
 					{Member: m3.ID, Score: float64(now.Add(time.Hour).Unix())},
 					{Member: m4.ID, Score: float64(now.Unix())},
 				},
-				base.ScheduledKey("critical"): {},
-				base.ScheduledKey("low"):      {},
+				base.ScheduledKey("", "critical"): {},
+				base.ScheduledKey("", "low"):      {},
 			},
 			retry: map[string][]redis.Z{
-				base.RetryKey("default"):  {},
-				base.RetryKey("critical"): {},
-				base.RetryKey("low"):      {},
+				base.RetryKey("", "default"):  {},
+				base.RetryKey("", "critical"): {},
+				base.RetryKey("", "low"):      {},
 			},
 			archived: map[string][]redis.Z{
-				base.ArchivedKey("default"):  {},
-				base.ArchivedKey("critical"): {},
-				base.ArchivedKey("low"):      {},
+				base.ArchivedKey("", "default"):  {},
+				base.ArchivedKey("", "critical"): {},
+				base.ArchivedKey("", "low"):      {},
 			},
 			completed: map[string][]redis.Z{
-				base.CompletedKey("default"):  {},
-				base.CompletedKey("critical"): {},
-				base.CompletedKey("low"):      {},
+				base.CompletedKey("", "default"):  {},
+				base.CompletedKey("", "critical"): {},
+				base.CompletedKey("", "low"):      {},
 			},
 			groups: map[string][]redis.Z{
-				base.GroupKey("default", "sms:user1"): {
+				base.GroupKey("", "default", "sms:user1"): {
 					{Member: m7.ID, Score: float64(now.Add(-3 * time.Second).Unix())},
 				},
 			},
@@ -196,37 +196,37 @@ func TestCurrentStats(t *testing.T) {
 			},
 			allQueues: []string{"default", "critical", "low"},
 			pending: map[string][]string{
-				base.PendingKey("default"):  {m1.ID},
-				base.PendingKey("critical"): {},
-				base.PendingKey("low"):      {m6.ID},
+				base.PendingKey("", "default"):  {m1.ID},
+				base.PendingKey("", "critical"): {},
+				base.PendingKey("", "low"):      {m6.ID},
 			},
 			active: map[string][]string{
-				base.ActiveKey("default"):  {m2.ID},
-				base.ActiveKey("critical"): {},
-				base.ActiveKey("low"):      {},
+				base.ActiveKey("", "default"):  {m2.ID},
+				base.ActiveKey("", "critical"): {},
+				base.ActiveKey("", "low"):      {},
 			},
 			scheduled: map[string][]redis.Z{
-				base.ScheduledKey("default"): {
+				base.ScheduledKey("", "default"): {
 					{Member: m3.ID, Score: float64(now.Add(time.Hour).Unix())},
 					{Member: m4.ID, Score: float64(now.Unix())},
 				},
-				base.ScheduledKey("critical"): {},
-				base.ScheduledKey("low"):      {},
+				base.ScheduledKey("", "critical"): {},
+				base.ScheduledKey("", "low"):      {},
 			},
 			retry: map[string][]redis.Z{
-				base.RetryKey("default"):  {},
-				base.RetryKey("critical"): {},
-				base.RetryKey("low"):      {},
+				base.RetryKey("", "default"):  {},
+				base.RetryKey("", "critical"): {},
+				base.RetryKey("", "low"):      {},
 			},
 			archived: map[string][]redis.Z{
-				base.ArchivedKey("default"):  {},
-				base.ArchivedKey("critical"): {},
-				base.ArchivedKey("low"):      {},
+				base.ArchivedKey("", "default"):  {},
+				base.ArchivedKey("", "critical"): {},
+				base.ArchivedKey("", "low"):      {},
 			},
 			completed: map[string][]redis.Z{
-				base.CompletedKey("default"):  {},
-				base.CompletedKey("critical"): {},
-				base.CompletedKey("low"):      {},
+				base.CompletedKey("", "default"):  {},
+				base.CompletedKey("", "critical"): {},
+				base.CompletedKey("", "low"):      {},
 			},
 			processed: map[string]int{
 				"default":  120,
@@ -296,23 +296,23 @@ func TestCurrentStats(t *testing.T) {
 		h.SeedRedisZSets(t, r.client, tc.groups)
 		ctx := context.Background()
 		for qname, n := range tc.processed {
-			r.client.Set(ctx, base.ProcessedKey(qname, now), n, 0)
+			r.client.Set(ctx, base.ProcessedKey("", qname, now), n, 0)
 		}
 		for qname, n := range tc.failed {
-			r.client.Set(ctx, base.FailedKey(qname, now), n, 0)
+			r.client.Set(ctx, base.FailedKey("", qname, now), n, 0)
 		}
 		for qname, n := range tc.processedTotal {
-			r.client.Set(ctx, base.ProcessedTotalKey(qname), n, 0)
+			r.client.Set(ctx, base.ProcessedTotalKey("", qname), n, 0)
 		}
 		for qname, n := range tc.failedTotal {
-			r.client.Set(ctx, base.FailedTotalKey(qname), n, 0)
+			r.client.Set(ctx, base.FailedTotalKey("", qname), n, 0)
 		}
 		for qname, enqueueTime := range tc.oldestPendingMessageEnqueueTime {
 			if enqueueTime.IsZero() {
 				continue
 			}
-			oldestPendingMessageID := r.client.LRange(ctx, base.PendingKey(qname), -1, -1).Val()[0] // get the right most msg in the list
-			r.client.HSet(ctx, base.TaskKey(qname, oldestPendingMessageID), "pending_since", enqueueTime.UnixNano())
+			oldestPendingMessageID := r.client.LRange(ctx, base.PendingKey("", qname), -1, -1).Val()[0] // get the right most msg in the list
+			r.client.HSet(ctx, base.TaskKey("", qname, oldestPendingMessageID), "pending_since", enqueueTime.UnixNano())
 		}
 
 		got, err := r.CurrentStats(tc.qname)
@@ -361,8 +361,8 @@ func TestHistoricalStats(t *testing.T) {
 		// populate last n days data
 		for i := 0; i < tc.n; i++ {
 			ts := now.Add(-time.Duration(i) * 24 * time.Hour)
-			processedKey := base.ProcessedKey(tc.qname, ts)
-			failedKey := base.FailedKey(tc.qname, ts)
+			processedKey := base.ProcessedKey("", tc.qname, ts)
+			failedKey := base.FailedKey("", tc.qname, ts)
 			r.client.Set(context.Background(), processedKey, (i+1)*1000, 0)
 			r.client.Set(context.Background(), failedKey, (i+1)*10, 0)
 		}
@@ -445,19 +445,19 @@ func TestGroupStats(t *testing.T) {
 			{Msg: m5, State: base.TaskStateAggregating},
 		},
 		allGroups: map[string][]string{
-			base.AllGroups("default"): {"group1", "group2"},
-			base.AllGroups("custom"):  {"group1"},
+			base.AllGroups("", "default"): {"group1", "group2"},
+			base.AllGroups("", "custom"):  {"group1"},
 		},
 		groups: map[string][]redis.Z{
-			base.GroupKey("default", "group1"): {
+			base.GroupKey("", "default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-10 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				{Member: m3.ID, Score: float64(now.Add(-30 * time.Second).Unix())},
 			},
-			base.GroupKey("default", "group2"): {
+			base.GroupKey("", "default", "group2"): {
 				{Member: m4.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 			},
-			base.GroupKey("custom", "group1"): {
+			base.GroupKey("", "custom", "group1"): {
 				{Member: m5.ID, Score: float64(now.Add(-10 * time.Second).Unix())},
 				{Member: m6.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 			},
@@ -573,7 +573,7 @@ func TestGetTaskInfo(t *testing.T) {
 	h.SeedAllArchivedQueues(t, r.client, fixtures.archived)
 	h.SeedAllCompletedQueues(t, r.client, fixtures.completed)
 	// Write result data for the completed task.
-	if err := r.client.HSet(context.Background(), base.TaskKey(m6.Queue, m6.ID), "result", "foobar").Err(); err != nil {
+	if err := r.client.HSet(context.Background(), base.TaskKey("", m6.Queue, m6.ID), "result", "foobar").Err(); err != nil {
 		t.Fatalf("Failed to write result data under task key: %v", err)
 	}
 
@@ -1593,18 +1593,18 @@ func TestListAggregating(t *testing.T) {
 		},
 		allQueues: []string{"default", "custom"},
 		allGroups: map[string][]string{
-			base.AllGroups("default"): {"group1", "group2"},
-			base.AllGroups("custom"):  {"group3"},
+			base.AllGroups("", "default"): {"group1", "group2"},
+			base.AllGroups("", "custom"):  {"group3"},
 		},
 		groups: map[string][]redis.Z{
-			base.GroupKey("default", "group1"): {
+			base.GroupKey("", "default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-30 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 			},
-			base.GroupKey("default", "group2"): {
+			base.GroupKey("", "default", "group2"): {
 				{Member: m3.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 			},
-			base.GroupKey("custom", "group3"): {
+			base.GroupKey("", "custom", "group3"): {
 				{Member: m4.ID, Score: float64(now.Add(-40 * time.Second).Unix())},
 			},
 		},
@@ -1658,7 +1658,7 @@ func TestListAggregatingPagination(t *testing.T) {
 	r := setup(t)
 	defer r.Close()
 
-	groupkey := base.GroupKey("default", "mygroup")
+	groupkey := base.GroupKey("", "default", "mygroup")
 	fxt := struct {
 		tasks     []*h.TaskSeedData
 		allQueues []string
@@ -1668,7 +1668,7 @@ func TestListAggregatingPagination(t *testing.T) {
 		tasks:     []*h.TaskSeedData{}, // will be populated below
 		allQueues: []string{"default"},
 		allGroups: map[string][]string{
-			base.AllGroups("default"): {"mygroup"},
+			base.AllGroups("", "default"): {"mygroup"},
 		},
 		groups: map[string][]redis.Z{
 			groupkey: {}, // will be populated below
@@ -1891,14 +1891,14 @@ func TestRunArchivedTask(t *testing.T) {
 		for qname, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey("", qname), diff)
 			}
 		}
 
 		for qname, want := range tc.wantArchived {
 			gotArchived := h.GetArchivedMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotArchived, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q, (-want, +got)\n%s", base.ArchivedKey(qname), diff)
+				t.Errorf("mismatch found in %q, (-want, +got)\n%s", base.ArchivedKey("", qname), diff)
 			}
 		}
 	}
@@ -1971,14 +1971,14 @@ func TestRunRetryTask(t *testing.T) {
 		for qname, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey("", qname), diff)
 			}
 		}
 
 		for qname, want := range tc.wantRetry {
 			gotRetry := h.GetRetryMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotRetry, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q, (-want, +got)\n%s", base.RetryKey(qname), diff)
+				t.Errorf("mismatch found in %q, (-want, +got)\n%s", base.RetryKey("", qname), diff)
 			}
 		}
 	}
@@ -2006,15 +2006,15 @@ func TestRunAggregatingTask(t *testing.T) {
 		},
 		allQueues: []string{"default", "custom"},
 		allGroups: map[string][]string{
-			base.AllGroups("default"): {"group1"},
-			base.AllGroups("custom"):  {"group1"},
+			base.AllGroups("", "default"): {"group1"},
+			base.AllGroups("", "custom"):  {"group1"},
 		},
 		groups: map[string][]redis.Z{
-			base.GroupKey("default", "group1"): {
+			base.GroupKey("", "default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
 			},
-			base.GroupKey("custom", "group1"): {
+			base.GroupKey("", "custom", "group1"): {
 				{Member: m3.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 			},
 		},
@@ -2033,17 +2033,17 @@ func TestRunAggregatingTask(t *testing.T) {
 			qname: "default",
 			id:    m1.ID,
 			wantPending: map[string][]string{
-				base.PendingKey("default"): {m1.ID},
+				base.PendingKey("", "default"): {m1.ID},
 			},
 			wantAllGroups: map[string][]string{
-				base.AllGroups("default"): {"group1"},
-				base.AllGroups("custom"):  {"group1"},
+				base.AllGroups("", "default"): {"group1"},
+				base.AllGroups("", "custom"):  {"group1"},
 			},
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "group1"): {
+				base.GroupKey("", "default", "group1"): {
 					{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
 				},
-				base.GroupKey("custom", "group1"): {
+				base.GroupKey("", "custom", "group1"): {
 					{Member: m3.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				},
 			},
@@ -2053,18 +2053,18 @@ func TestRunAggregatingTask(t *testing.T) {
 			qname: "custom",
 			id:    m3.ID,
 			wantPending: map[string][]string{
-				base.PendingKey("custom"): {m3.ID},
+				base.PendingKey("", "custom"): {m3.ID},
 			},
 			wantAllGroups: map[string][]string{
-				base.AllGroups("default"): {"group1"},
-				base.AllGroups("custom"):  {},
+				base.AllGroups("", "default"): {"group1"},
+				base.AllGroups("", "custom"):  {},
 			},
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "group1"): {
+				base.GroupKey("", "default", "group1"): {
 					{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 					{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
 				},
-				base.GroupKey("custom", "group1"): {},
+				base.GroupKey("", "custom", "group1"): {},
 			},
 		},
 	}
@@ -2156,14 +2156,14 @@ func TestRunScheduledTask(t *testing.T) {
 		for qname, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey("", qname), diff)
 			}
 		}
 
 		for qname, want := range tc.wantScheduled {
 			gotScheduled := h.GetScheduledMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotScheduled, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q, (-want, +got)\n%s", base.ScheduledKey(qname), diff)
+				t.Errorf("mismatch found in %q, (-want, +got)\n%s", base.ScheduledKey("", qname), diff)
 			}
 		}
 	}
@@ -2304,21 +2304,21 @@ func TestRunTaskError(t *testing.T) {
 		for qname, want := range tc.wantActive {
 			gotActive := h.GetActiveMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotActive, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q: (-want, +got)\n%s", base.ActiveKey(qname), diff)
+				t.Errorf("mismatch found in %q: (-want, +got)\n%s", base.ActiveKey("", qname), diff)
 			}
 		}
 
 		for qname, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey("", qname), diff)
 			}
 		}
 
 		for qname, want := range tc.wantScheduled {
 			gotScheduled := h.GetScheduledMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotScheduled, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q, (-want, +got)\n%s", base.ScheduledKey(qname), diff)
+				t.Errorf("mismatch found in %q, (-want, +got)\n%s", base.ScheduledKey("", qname), diff)
 			}
 		}
 	}
@@ -2418,13 +2418,13 @@ func TestRunAllScheduledTasks(t *testing.T) {
 		for qname, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
-				t.Errorf("%s; mismatch found in %q; (-want, +got)\n%s", tc.desc, base.PendingKey(qname), diff)
+				t.Errorf("%s; mismatch found in %q; (-want, +got)\n%s", tc.desc, base.PendingKey("", qname), diff)
 			}
 		}
 		for qname, want := range tc.wantScheduled {
 			gotScheduled := h.GetScheduledMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotScheduled, h.SortMsgOpt); diff != "" {
-				t.Errorf("%s; mismatch found in %q; (-want, +got)\n%s", tc.desc, base.ScheduledKey(qname), diff)
+				t.Errorf("%s; mismatch found in %q; (-want, +got)\n%s", tc.desc, base.ScheduledKey("", qname), diff)
 			}
 		}
 	}
@@ -2524,13 +2524,13 @@ func TestRunAllRetryTasks(t *testing.T) {
 		for qname, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
-				t.Errorf("%s; mismatch found in %q; (-want, +got)\n%s", tc.desc, base.PendingKey(qname), diff)
+				t.Errorf("%s; mismatch found in %q; (-want, +got)\n%s", tc.desc, base.PendingKey("", qname), diff)
 			}
 		}
 		for qname, want := range tc.wantRetry {
 			gotRetry := h.GetRetryMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotRetry, h.SortMsgOpt); diff != "" {
-				t.Errorf("%s; mismatch found in %q; (-want, +got)\n%s", tc.desc, base.RetryKey(qname), diff)
+				t.Errorf("%s; mismatch found in %q; (-want, +got)\n%s", tc.desc, base.RetryKey("", qname), diff)
 			}
 		}
 	}
@@ -2630,13 +2630,13 @@ func TestRunAllArchivedTasks(t *testing.T) {
 		for qname, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
-				t.Errorf("%s; mismatch found in %q; (-want, +got)\n%s", tc.desc, base.PendingKey(qname), diff)
+				t.Errorf("%s; mismatch found in %q; (-want, +got)\n%s", tc.desc, base.PendingKey("", qname), diff)
 			}
 		}
 		for qname, want := range tc.wantArchived {
 			gotArchived := h.GetArchivedMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotArchived, h.SortMsgOpt); diff != "" {
-				t.Errorf("%s; mismatch found in %q; (-want, +got)\n%s", tc.desc, base.ArchivedKey(qname), diff)
+				t.Errorf("%s; mismatch found in %q; (-want, +got)\n%s", tc.desc, base.ArchivedKey("", qname), diff)
 			}
 		}
 	}
@@ -2697,15 +2697,15 @@ func TestRunAllAggregatingTasks(t *testing.T) {
 		},
 		allQueues: []string{"default", "custom"},
 		allGroups: map[string][]string{
-			base.AllGroups("default"): {"group1"},
-			base.AllGroups("custom"):  {"group2"},
+			base.AllGroups("", "default"): {"group1"},
+			base.AllGroups("", "custom"):  {"group2"},
 		},
 		groups: map[string][]redis.Z{
-			base.GroupKey("default", "group1"): {
+			base.GroupKey("", "default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
 			},
-			base.GroupKey("custom", "group2"): {
+			base.GroupKey("", "custom", "group2"): {
 				{Member: m3.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 			},
 		},
@@ -2726,17 +2726,17 @@ func TestRunAllAggregatingTasks(t *testing.T) {
 			gname: "group1",
 			want:  2,
 			wantPending: map[string][]string{
-				base.PendingKey("default"): {m1.ID, m2.ID},
+				base.PendingKey("", "default"): {m1.ID, m2.ID},
 			},
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "group1"): {},
-				base.GroupKey("custom", "group2"): {
+				base.GroupKey("", "default", "group1"): {},
+				base.GroupKey("", "custom", "group2"): {
 					{Member: m3.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				},
 			},
 			wantAllGroups: map[string][]string{
-				base.AllGroups("default"): {},
-				base.AllGroups("custom"):  {"group2"},
+				base.AllGroups("", "default"): {},
+				base.AllGroups("", "custom"):  {"group2"},
 			},
 		},
 		{
@@ -2745,18 +2745,18 @@ func TestRunAllAggregatingTasks(t *testing.T) {
 			gname: "group2",
 			want:  1,
 			wantPending: map[string][]string{
-				base.PendingKey("custom"): {m3.ID},
+				base.PendingKey("", "custom"): {m3.ID},
 			},
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "group1"): {
+				base.GroupKey("", "default", "group1"): {
 					{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 					{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
 				},
-				base.GroupKey("custom", "group2"): {},
+				base.GroupKey("", "custom", "group2"): {},
 			},
 			wantAllGroups: map[string][]string{
-				base.AllGroups("default"): {"group1"},
-				base.AllGroups("custom"):  {},
+				base.AllGroups("", "default"): {"group1"},
+				base.AllGroups("", "custom"):  {},
 			},
 		},
 	}
@@ -2870,7 +2870,7 @@ func TestArchiveRetryTask(t *testing.T) {
 			gotRetry := h.GetRetryEntries(t, r.client, qname)
 			if diff := cmp.Diff(want, gotRetry, h.SortZSetEntryOpt, zScoreCmpOpt); diff != "" {
 				t.Errorf("mismatch found in %q; (-want,+got)\n%s",
-					base.RetryKey(qname), diff)
+					base.RetryKey("", qname), diff)
 			}
 		}
 
@@ -2878,7 +2878,7 @@ func TestArchiveRetryTask(t *testing.T) {
 			gotArchived := h.GetArchivedEntries(t, r.client, qname)
 			if diff := cmp.Diff(want, gotArchived, h.SortZSetEntryOpt, zScoreCmpOpt); diff != "" {
 				t.Errorf("mismatch found in %q; (-want,+got)\n%s",
-					base.ArchivedKey(qname), diff)
+					base.ArchivedKey("", qname), diff)
 			}
 		}
 	}
@@ -2971,7 +2971,7 @@ func TestArchiveScheduledTask(t *testing.T) {
 			gotScheduled := h.GetScheduledEntries(t, r.client, qname)
 			if diff := cmp.Diff(want, gotScheduled, h.SortZSetEntryOpt, zScoreCmpOpt); diff != "" {
 				t.Errorf("mismatch found in %q; (-want,+got)\n%s",
-					base.ScheduledKey(qname), diff)
+					base.ScheduledKey("", qname), diff)
 			}
 		}
 
@@ -2979,7 +2979,7 @@ func TestArchiveScheduledTask(t *testing.T) {
 			gotArchived := h.GetArchivedEntries(t, r.client, qname)
 			if diff := cmp.Diff(want, gotArchived, h.SortZSetEntryOpt, zScoreCmpOpt); diff != "" {
 				t.Errorf("mismatch found in %q; (-want,+got)\n%s",
-					base.ArchivedKey(qname), diff)
+					base.ArchivedKey("", qname), diff)
 			}
 		}
 	}
@@ -3007,15 +3007,15 @@ func TestArchiveAggregatingTask(t *testing.T) {
 		},
 		allQueues: []string{"default", "custom"},
 		allGroups: map[string][]string{
-			base.AllGroups("default"): {"group1"},
-			base.AllGroups("custom"):  {"group1"},
+			base.AllGroups("", "default"): {"group1"},
+			base.AllGroups("", "custom"):  {"group1"},
 		},
 		groups: map[string][]redis.Z{
-			base.GroupKey("default", "group1"): {
+			base.GroupKey("", "default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
 			},
-			base.GroupKey("custom", "group1"): {
+			base.GroupKey("", "custom", "group1"): {
 				{Member: m3.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 			},
 		},
@@ -3034,19 +3034,19 @@ func TestArchiveAggregatingTask(t *testing.T) {
 			qname: "default",
 			id:    m1.ID,
 			wantArchived: map[string][]redis.Z{
-				base.ArchivedKey("default"): {
+				base.ArchivedKey("", "default"): {
 					{Member: m1.ID, Score: float64(now.Unix())},
 				},
 			},
 			wantAllGroups: map[string][]string{
-				base.AllGroups("default"): {"group1"},
-				base.AllGroups("custom"):  {"group1"},
+				base.AllGroups("", "default"): {"group1"},
+				base.AllGroups("", "custom"):  {"group1"},
 			},
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "group1"): {
+				base.GroupKey("", "default", "group1"): {
 					{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
 				},
-				base.GroupKey("custom", "group1"): {
+				base.GroupKey("", "custom", "group1"): {
 					{Member: m3.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				},
 			},
@@ -3056,20 +3056,20 @@ func TestArchiveAggregatingTask(t *testing.T) {
 			qname: "custom",
 			id:    m3.ID,
 			wantArchived: map[string][]redis.Z{
-				base.ArchivedKey("custom"): {
+				base.ArchivedKey("", "custom"): {
 					{Member: m3.ID, Score: float64(now.Unix())},
 				},
 			},
 			wantAllGroups: map[string][]string{
-				base.AllGroups("default"): {"group1"},
-				base.AllGroups("custom"):  {},
+				base.AllGroups("", "default"): {"group1"},
+				base.AllGroups("", "custom"):  {},
 			},
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "group1"): {
+				base.GroupKey("", "default", "group1"): {
 					{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 					{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
 				},
-				base.GroupKey("custom", "group1"): {},
+				base.GroupKey("", "custom", "group1"): {},
 			},
 		},
 	}
@@ -3163,7 +3163,7 @@ func TestArchivePendingTask(t *testing.T) {
 			gotPending := h.GetPendingMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
 				t.Errorf("mismatch found in %q; (-want,+got)\n%s",
-					base.PendingKey(qname), diff)
+					base.PendingKey("", qname), diff)
 			}
 		}
 
@@ -3171,7 +3171,7 @@ func TestArchivePendingTask(t *testing.T) {
 			gotArchived := h.GetArchivedEntries(t, r.client, qname)
 			if diff := cmp.Diff(want, gotArchived, h.SortZSetEntryOpt, zScoreCmpOpt); diff != "" {
 				t.Errorf("mismatch found in %q; (-want,+got)\n%s",
-					base.ArchivedKey(qname), diff)
+					base.ArchivedKey("", qname), diff)
 			}
 		}
 	}
@@ -3311,7 +3311,7 @@ func TestArchiveTaskError(t *testing.T) {
 			gotActive := h.GetActiveMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotActive, h.SortMsgOpt); diff != "" {
 				t.Errorf("mismatch found in %q; (-want, +got)\n%s",
-					base.ActiveKey(qname), diff)
+					base.ActiveKey("", qname), diff)
 			}
 		}
 
@@ -3319,7 +3319,7 @@ func TestArchiveTaskError(t *testing.T) {
 			gotScheduled := h.GetScheduledEntries(t, r.client, qname)
 			if diff := cmp.Diff(want, gotScheduled, h.SortZSetEntryOpt, zScoreCmpOpt); diff != "" {
 				t.Errorf("mismatch found in %q; (-want,+got)\n%s",
-					base.ScheduledKey(qname), diff)
+					base.ScheduledKey("", qname), diff)
 			}
 		}
 
@@ -3327,7 +3327,7 @@ func TestArchiveTaskError(t *testing.T) {
 			gotArchived := h.GetArchivedEntries(t, r.client, qname)
 			if diff := cmp.Diff(want, gotArchived, h.SortZSetEntryOpt, zScoreCmpOpt); diff != "" {
 				t.Errorf("mismatch found in %q; (-want,+got)\n%s",
-					base.ArchivedKey(qname), diff)
+					base.ArchivedKey("", qname), diff)
 			}
 		}
 	}
@@ -3455,7 +3455,7 @@ func TestArchiveAllPendingTasks(t *testing.T) {
 			gotPending := h.GetPendingMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
 				t.Errorf("mismatch found in %q; (-want,+got)\n%s",
-					base.PendingKey(qname), diff)
+					base.PendingKey("", qname), diff)
 			}
 		}
 
@@ -3463,7 +3463,7 @@ func TestArchiveAllPendingTasks(t *testing.T) {
 			gotArchived := h.GetArchivedEntries(t, r.client, qname)
 			if diff := cmp.Diff(want, gotArchived, h.SortZSetEntryOpt); diff != "" {
 				t.Errorf("mismatch found in %q; (-want,+got)\n%s",
-					base.ArchivedKey(qname), diff)
+					base.ArchivedKey("", qname), diff)
 			}
 		}
 	}
@@ -3492,15 +3492,15 @@ func TestArchiveAllAggregatingTasks(t *testing.T) {
 		},
 		allQueues: []string{"default", "custom"},
 		allGroups: map[string][]string{
-			base.AllGroups("default"): {"group1"},
-			base.AllGroups("custom"):  {"group2"},
+			base.AllGroups("", "default"): {"group1"},
+			base.AllGroups("", "custom"):  {"group2"},
 		},
 		groups: map[string][]redis.Z{
-			base.GroupKey("default", "group1"): {
+			base.GroupKey("", "default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
 			},
-			base.GroupKey("custom", "group2"): {
+			base.GroupKey("", "custom", "group2"): {
 				{Member: m3.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 			},
 		},
@@ -3521,20 +3521,20 @@ func TestArchiveAllAggregatingTasks(t *testing.T) {
 			gname: "group1",
 			want:  2,
 			wantArchived: map[string][]redis.Z{
-				base.ArchivedKey("default"): {
+				base.ArchivedKey("", "default"): {
 					{Member: m1.ID, Score: float64(now.Unix())},
 					{Member: m2.ID, Score: float64(now.Unix())},
 				},
 			},
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "group1"): {},
-				base.GroupKey("custom", "group2"): {
+				base.GroupKey("", "default", "group1"): {},
+				base.GroupKey("", "custom", "group2"): {
 					{Member: m3.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				},
 			},
 			wantAllGroups: map[string][]string{
-				base.AllGroups("default"): {},
-				base.AllGroups("custom"):  {"group2"},
+				base.AllGroups("", "default"): {},
+				base.AllGroups("", "custom"):  {"group2"},
 			},
 		},
 		{
@@ -3543,20 +3543,20 @@ func TestArchiveAllAggregatingTasks(t *testing.T) {
 			gname: "group2",
 			want:  1,
 			wantArchived: map[string][]redis.Z{
-				base.ArchivedKey("custom"): {
+				base.ArchivedKey("", "custom"): {
 					{Member: m3.ID, Score: float64(now.Unix())},
 				},
 			},
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "group1"): {
+				base.GroupKey("", "default", "group1"): {
 					{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 					{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
 				},
-				base.GroupKey("custom", "group2"): {},
+				base.GroupKey("", "custom", "group2"): {},
 			},
 			wantAllGroups: map[string][]string{
-				base.AllGroups("default"): {"group1"},
-				base.AllGroups("custom"):  {},
+				base.AllGroups("", "default"): {"group1"},
+				base.AllGroups("", "custom"):  {},
 			},
 		},
 	}
@@ -3719,7 +3719,7 @@ func TestArchiveAllRetryTasks(t *testing.T) {
 			gotRetry := h.GetRetryEntries(t, r.client, qname)
 			if diff := cmp.Diff(want, gotRetry, h.SortZSetEntryOpt); diff != "" {
 				t.Errorf("mismatch found in %q; (-want,+got)\n%s",
-					base.RetryKey(qname), diff)
+					base.RetryKey("", qname), diff)
 			}
 		}
 
@@ -3727,7 +3727,7 @@ func TestArchiveAllRetryTasks(t *testing.T) {
 			gotArchived := h.GetArchivedEntries(t, r.client, qname)
 			if diff := cmp.Diff(want, gotArchived, h.SortZSetEntryOpt); diff != "" {
 				t.Errorf("mismatch found in %q; (-want,+got)\n%s",
-					base.ArchivedKey(qname), diff)
+					base.ArchivedKey("", qname), diff)
 			}
 		}
 	}
@@ -3869,7 +3869,7 @@ func TestArchiveAllScheduledTasks(t *testing.T) {
 			gotScheduled := h.GetScheduledEntries(t, r.client, qname)
 			if diff := cmp.Diff(want, gotScheduled, h.SortZSetEntryOpt); diff != "" {
 				t.Errorf("mismatch found in %q; (-want,+got)\n%s",
-					base.ScheduledKey(qname), diff)
+					base.ScheduledKey("", qname), diff)
 			}
 		}
 
@@ -3877,7 +3877,7 @@ func TestArchiveAllScheduledTasks(t *testing.T) {
 			gotArchived := h.GetArchivedEntries(t, r.client, qname)
 			if diff := cmp.Diff(want, gotArchived, h.SortZSetEntryOpt); diff != "" {
 				t.Errorf("mismatch found in %q; (-want,+got)\n%s",
-					base.ArchivedKey(qname), diff)
+					base.ArchivedKey("", qname), diff)
 			}
 		}
 	}
@@ -3972,7 +3972,7 @@ func TestDeleteArchivedTask(t *testing.T) {
 		for qname, want := range tc.wantArchived {
 			gotArchived := h.GetArchivedMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotArchived, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ArchivedKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ArchivedKey("", qname), diff)
 			}
 		}
 	}
@@ -4038,7 +4038,7 @@ func TestDeleteRetryTask(t *testing.T) {
 		for qname, want := range tc.wantRetry {
 			gotRetry := h.GetRetryMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotRetry, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.RetryKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.RetryKey("", qname), diff)
 			}
 		}
 	}
@@ -4104,7 +4104,7 @@ func TestDeleteScheduledTask(t *testing.T) {
 		for qname, want := range tc.wantScheduled {
 			gotScheduled := h.GetScheduledMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotScheduled, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ScheduledKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ScheduledKey("", qname), diff)
 			}
 		}
 	}
@@ -4131,15 +4131,15 @@ func TestDeleteAggregatingTask(t *testing.T) {
 		},
 		allQueues: []string{"default", "custom"},
 		allGroups: map[string][]string{
-			base.AllGroups("default"): {"group1"},
-			base.AllGroups("custom"):  {"group1"},
+			base.AllGroups("", "default"): {"group1"},
+			base.AllGroups("", "custom"):  {"group1"},
 		},
 		groups: map[string][]redis.Z{
-			base.GroupKey("default", "group1"): {
+			base.GroupKey("", "default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
 			},
-			base.GroupKey("custom", "group1"): {
+			base.GroupKey("", "custom", "group1"): {
 				{Member: m3.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 			},
 		},
@@ -4157,14 +4157,14 @@ func TestDeleteAggregatingTask(t *testing.T) {
 			qname: "default",
 			id:    m1.ID,
 			wantAllGroups: map[string][]string{
-				base.AllGroups("default"): {"group1"},
-				base.AllGroups("custom"):  {"group1"},
+				base.AllGroups("", "default"): {"group1"},
+				base.AllGroups("", "custom"):  {"group1"},
 			},
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "group1"): {
+				base.GroupKey("", "default", "group1"): {
 					{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
 				},
-				base.GroupKey("custom", "group1"): {
+				base.GroupKey("", "custom", "group1"): {
 					{Member: m3.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				},
 			},
@@ -4174,15 +4174,15 @@ func TestDeleteAggregatingTask(t *testing.T) {
 			qname: "custom",
 			id:    m3.ID,
 			wantAllGroups: map[string][]string{
-				base.AllGroups("default"): {"group1"},
-				base.AllGroups("custom"):  {}, // should be clear out group from all-groups set
+				base.AllGroups("", "default"): {"group1"},
+				base.AllGroups("", "custom"):  {}, // should be clear out group from all-groups set
 			},
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "group1"): {
+				base.GroupKey("", "default", "group1"): {
 					{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 					{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
 				},
-				base.GroupKey("custom", "group1"): {},
+				base.GroupKey("", "custom", "group1"): {},
 			},
 		},
 	}
@@ -4254,7 +4254,7 @@ func TestDeletePendingTask(t *testing.T) {
 		for qname, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey("", qname), diff)
 			}
 		}
 	}
@@ -4268,7 +4268,7 @@ func TestDeleteTaskWithUniqueLock(t *testing.T) {
 		Type:      "email",
 		Payload:   h.JSON(map[string]interface{}{"user_id": json.Number("123")}),
 		Queue:     base.DefaultQueueName,
-		UniqueKey: base.UniqueKey(base.DefaultQueueName, "email", h.JSON(map[string]interface{}{"user_id": 123})),
+		UniqueKey: base.UniqueKey("", base.DefaultQueueName, "email", h.JSON(map[string]interface{}{"user_id": 123})),
 	}
 	t1 := time.Now().Add(3 * time.Hour)
 
@@ -4306,7 +4306,7 @@ func TestDeleteTaskWithUniqueLock(t *testing.T) {
 		for qname, want := range tc.wantScheduled {
 			gotScheduled := h.GetScheduledMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotScheduled, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ScheduledKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ScheduledKey("", qname), diff)
 			}
 		}
 
@@ -4402,14 +4402,14 @@ func TestDeleteTaskError(t *testing.T) {
 		for qname, want := range tc.wantActive {
 			gotActive := h.GetActiveMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotActive, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ActiveKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ActiveKey("", qname), diff)
 			}
 		}
 
 		for qname, want := range tc.wantScheduled {
 			gotScheduled := h.GetScheduledMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotScheduled, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ScheduledKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ScheduledKey("", qname), diff)
 			}
 		}
 	}
@@ -4471,7 +4471,7 @@ func TestDeleteAllArchivedTasks(t *testing.T) {
 		for qname, want := range tc.wantArchived {
 			gotArchived := h.GetArchivedMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotArchived, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ArchivedKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ArchivedKey("", qname), diff)
 			}
 		}
 	}
@@ -4541,7 +4541,7 @@ func TestDeleteAllCompletedTasks(t *testing.T) {
 		for qname, want := range tc.wantCompleted {
 			gotCompleted := h.GetCompletedMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotCompleted, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.CompletedKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.CompletedKey("", qname), diff)
 			}
 		}
 	}
@@ -4608,7 +4608,7 @@ func TestDeleteAllArchivedTasksWithUniqueKey(t *testing.T) {
 		for qname, want := range tc.wantArchived {
 			gotArchived := h.GetArchivedMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotArchived, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ArchivedKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ArchivedKey("", qname), diff)
 			}
 		}
 
@@ -4676,7 +4676,7 @@ func TestDeleteAllRetryTasks(t *testing.T) {
 		for qname, want := range tc.wantRetry {
 			gotRetry := h.GetRetryMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotRetry, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.RetryKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.RetryKey("", qname), diff)
 			}
 		}
 	}
@@ -4738,7 +4738,7 @@ func TestDeleteAllScheduledTasks(t *testing.T) {
 		for qname, want := range tc.wantScheduled {
 			gotScheduled := h.GetScheduledMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotScheduled, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ScheduledKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.ScheduledKey("", qname), diff)
 			}
 		}
 	}
@@ -4765,15 +4765,15 @@ func TestDeleteAllAggregatingTasks(t *testing.T) {
 		},
 		allQueues: []string{"default", "custom"},
 		allGroups: map[string][]string{
-			base.AllGroups("default"): {"group1"},
-			base.AllGroups("custom"):  {"group1"},
+			base.AllGroups("", "default"): {"group1"},
+			base.AllGroups("", "custom"):  {"group1"},
 		},
 		groups: map[string][]redis.Z{
-			base.GroupKey("default", "group1"): {
+			base.GroupKey("", "default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
 			},
-			base.GroupKey("custom", "group1"): {
+			base.GroupKey("", "custom", "group1"): {
 				{Member: m3.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 			},
 		},
@@ -4793,12 +4793,12 @@ func TestDeleteAllAggregatingTasks(t *testing.T) {
 			gname: "group1",
 			want:  2,
 			wantAllGroups: map[string][]string{
-				base.AllGroups("default"): {},
-				base.AllGroups("custom"):  {"group1"},
+				base.AllGroups("", "default"): {},
+				base.AllGroups("", "custom"):  {"group1"},
 			},
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "group1"): nil,
-				base.GroupKey("custom", "group1"): {
+				base.GroupKey("", "default", "group1"): nil,
+				base.GroupKey("", "custom", "group1"): {
 					{Member: m3.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				},
 			},
@@ -4809,15 +4809,15 @@ func TestDeleteAllAggregatingTasks(t *testing.T) {
 			gname: "group1",
 			want:  1,
 			wantAllGroups: map[string][]string{
-				base.AllGroups("default"): {"group1"},
-				base.AllGroups("custom"):  {},
+				base.AllGroups("", "default"): {"group1"},
+				base.AllGroups("", "custom"):  {},
 			},
 			wantGroups: map[string][]redis.Z{
-				base.GroupKey("default", "group1"): {
+				base.GroupKey("", "default", "group1"): {
 					{Member: m1.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 					{Member: m2.ID, Score: float64(now.Add(-25 * time.Second).Unix())},
 				},
-				base.GroupKey("custom", "group1"): nil,
+				base.GroupKey("", "custom", "group1"): nil,
 			},
 		},
 	}
@@ -4894,7 +4894,7 @@ func TestDeleteAllPendingTasks(t *testing.T) {
 		for qname, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
-				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey(qname), diff)
+				t.Errorf("mismatch found in %q; (-want, +got)\n%s", base.PendingKey("", qname), diff)
 			}
 		}
 	}
@@ -5018,12 +5018,12 @@ func TestRemoveQueue(t *testing.T) {
 		}
 
 		keys := []string{
-			base.PendingKey(tc.qname),
-			base.ActiveKey(tc.qname),
-			base.LeaseKey(tc.qname),
-			base.ScheduledKey(tc.qname),
-			base.RetryKey(tc.qname),
-			base.ArchivedKey(tc.qname),
+			base.PendingKey("", tc.qname),
+			base.ActiveKey("", tc.qname),
+			base.LeaseKey("", tc.qname),
+			base.ScheduledKey("", tc.qname),
+			base.RetryKey("", tc.qname),
+			base.ArchivedKey("", tc.qname),
 		}
 		for _, key := range keys {
 			if r.client.Exists(context.Background(), key).Val() != 0 {
@@ -5031,7 +5031,7 @@ func TestRemoveQueue(t *testing.T) {
 			}
 		}
 
-		if n := len(r.client.Keys(context.Background(), base.TaskKeyPrefix(tc.qname)+"*").Val()); n != 0 {
+		if n := len(r.client.Keys(context.Background(), base.TaskKeyPrefix("", tc.qname)+"*").Val()); n != 0 {
 			t.Errorf("%d keys still exists for tasks", n)
 		}
 	}
@@ -5155,31 +5155,31 @@ func TestRemoveQueueError(t *testing.T) {
 		for qname, want := range tc.pending {
 			gotPending := h.GetPendingMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt); diff != "" {
-				t.Errorf("%s;mismatch found in %q; (-want,+got):\n%s", tc.desc, base.PendingKey(qname), diff)
+				t.Errorf("%s;mismatch found in %q; (-want,+got):\n%s", tc.desc, base.PendingKey("", qname), diff)
 			}
 		}
 		for qname, want := range tc.inProgress {
 			gotActive := h.GetActiveMessages(t, r.client, qname)
 			if diff := cmp.Diff(want, gotActive, h.SortMsgOpt); diff != "" {
-				t.Errorf("%s;mismatch found in %q; (-want,+got):\n%s", tc.desc, base.ActiveKey(qname), diff)
+				t.Errorf("%s;mismatch found in %q; (-want,+got):\n%s", tc.desc, base.ActiveKey("", qname), diff)
 			}
 		}
 		for qname, want := range tc.scheduled {
 			gotScheduled := h.GetScheduledEntries(t, r.client, qname)
 			if diff := cmp.Diff(want, gotScheduled, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("%s;mismatch found in %q; (-want,+got):\n%s", tc.desc, base.ScheduledKey(qname), diff)
+				t.Errorf("%s;mismatch found in %q; (-want,+got):\n%s", tc.desc, base.ScheduledKey("", qname), diff)
 			}
 		}
 		for qname, want := range tc.retry {
 			gotRetry := h.GetRetryEntries(t, r.client, qname)
 			if diff := cmp.Diff(want, gotRetry, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("%s;mismatch found in %q; (-want,+got):\n%s", tc.desc, base.RetryKey(qname), diff)
+				t.Errorf("%s;mismatch found in %q; (-want,+got):\n%s", tc.desc, base.RetryKey("", qname), diff)
 			}
 		}
 		for qname, want := range tc.archived {
 			gotArchived := h.GetArchivedEntries(t, r.client, qname)
 			if diff := cmp.Diff(want, gotArchived, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("%s;mismatch found in %q; (-want,+got):\n%s", tc.desc, base.ArchivedKey(qname), diff)
+				t.Errorf("%s;mismatch found in %q; (-want,+got):\n%s", tc.desc, base.ArchivedKey("", qname), diff)
 			}
 		}
 	}
@@ -5433,7 +5433,7 @@ func TestRecordSchedulerEnqueueEventTrimsDataSet(t *testing.T) {
 	var (
 		entryID = "entry123"
 		now     = time.Now()
-		key     = base.SchedulerHistoryKey(entryID)
+		key     = base.SchedulerHistoryKey("", entryID)
 	)
 
 	// Record maximum number of events.
@@ -5492,7 +5492,7 @@ func TestPause(t *testing.T) {
 		if err != nil {
 			t.Errorf("Pause(%q) returned error: %v", tc.qname, err)
 		}
-		key := base.PausedKey(tc.qname)
+		key := base.PausedKey("", tc.qname)
 		if r.client.Exists(context.Background(), key).Val() == 0 {
 			t.Errorf("key %q does not exist", key)
 		}
@@ -5547,7 +5547,7 @@ func TestUnpause(t *testing.T) {
 		if err != nil {
 			t.Errorf("Unpause(%q) returned error: %v", tc.qname, err)
 		}
-		key := base.PausedKey(tc.qname)
+		key := base.PausedKey("", tc.qname)
 		if r.client.Exists(context.Background(), key).Val() == 1 {
 			t.Errorf("key %q exists", key)
 		}

@@ -63,6 +63,7 @@ func newProcessorForTest(t *testing.T, r *rdb.RDB, h Handler) *processor {
 	go fakeHeartbeater(starting, finished, done)
 	go fakeSyncer(syncCh, done)
 	p := newProcessor(processorParams{
+		namespace:         "",
 		logger:            testLogger,
 		broker:            r,
 		baseCtxFn:         context.Background,
@@ -139,8 +140,8 @@ func TestProcessorSuccessWithSingleQueue(t *testing.T) {
 			}
 		}
 		time.Sleep(2 * time.Second) // wait for two second to allow all pending tasks to be processed.
-		if l := r.LLen(context.Background(), base.ActiveKey(base.DefaultQueueName)).Val(); l != 0 {
-			t.Errorf("%q has %d tasks, want 0", base.ActiveKey(base.DefaultQueueName), l)
+		if l := r.LLen(context.Background(), base.ActiveKey("", base.DefaultQueueName)).Val(); l != 0 {
+			t.Errorf("%q has %d tasks, want 0", base.ActiveKey("", base.DefaultQueueName), l)
 		}
 		p.shutdown()
 
@@ -211,8 +212,8 @@ func TestProcessorSuccessWithMultipleQueues(t *testing.T) {
 		time.Sleep(2 * time.Second)
 		// Make sure no messages are stuck in active list.
 		for _, qname := range tc.queues {
-			if l := r.LLen(context.Background(), base.ActiveKey(qname)).Val(); l != 0 {
-				t.Errorf("%q has %d tasks, want 0", base.ActiveKey(qname), l)
+			if l := r.LLen(context.Background(), base.ActiveKey("", qname)).Val(); l != 0 {
+				t.Errorf("%q has %d tasks, want 0", base.ActiveKey("", qname), l)
 			}
 		}
 		p.shutdown()
@@ -269,8 +270,8 @@ func TestProcessTasksWithLargeNumberInPayload(t *testing.T) {
 
 		p.start(&sync.WaitGroup{})
 		time.Sleep(2 * time.Second) // wait for two second to allow all pending tasks to be processed.
-		if l := r.LLen(context.Background(), base.ActiveKey(base.DefaultQueueName)).Val(); l != 0 {
-			t.Errorf("%q has %d tasks, want 0", base.ActiveKey(base.DefaultQueueName), l)
+		if l := r.LLen(context.Background(), base.ActiveKey("", base.DefaultQueueName)).Val(); l != 0 {
+			t.Errorf("%q has %d tasks, want 0", base.ActiveKey("", base.DefaultQueueName), l)
 		}
 		p.shutdown()
 
@@ -412,7 +413,7 @@ func TestProcessorRetry(t *testing.T) {
 				})
 		}
 		if diff := cmp.Diff(wantRetry, gotRetry, h.SortZSetEntryOpt, cmpOpt); diff != "" {
-			t.Errorf("%s: mismatch found in %q after running processor; (-want, +got)\n%s", tc.desc, base.RetryKey(base.DefaultQueueName), diff)
+			t.Errorf("%s: mismatch found in %q after running processor; (-want, +got)\n%s", tc.desc, base.RetryKey("", base.DefaultQueueName), diff)
 		}
 
 		gotArchived := h.GetArchivedEntries(t, r, base.DefaultQueueName)
@@ -425,11 +426,11 @@ func TestProcessorRetry(t *testing.T) {
 				})
 		}
 		if diff := cmp.Diff(wantArchived, gotArchived, h.SortZSetEntryOpt, cmpOpt); diff != "" {
-			t.Errorf("%s: mismatch found in %q after running processor; (-want, +got)\n%s", tc.desc, base.ArchivedKey(base.DefaultQueueName), diff)
+			t.Errorf("%s: mismatch found in %q after running processor; (-want, +got)\n%s", tc.desc, base.ArchivedKey("", base.DefaultQueueName), diff)
 		}
 
-		if l := r.LLen(context.Background(), base.ActiveKey(base.DefaultQueueName)).Val(); l != 0 {
-			t.Errorf("%s: %q has %d tasks, want 0", base.ActiveKey(base.DefaultQueueName), tc.desc, l)
+		if l := r.LLen(context.Background(), base.ActiveKey("", base.DefaultQueueName)).Val(); l != 0 {
+			t.Errorf("%s: %q has %d tasks, want 0", base.ActiveKey("", base.DefaultQueueName), tc.desc, l)
 		}
 
 		if n != tc.wantErrCount {
@@ -567,6 +568,7 @@ func TestProcessorWithExpiredLease(t *testing.T) {
 		}()
 		go fakeSyncer(syncCh, done)
 		p := newProcessor(processorParams{
+		namespace:         "",
 			logger:            testLogger,
 			broker:            rdbClient,
 			baseCtxFn:         context.Background,
@@ -722,6 +724,7 @@ func TestProcessorWithStrictPriority(t *testing.T) {
 		go fakeHeartbeater(starting, finished, done)
 		go fakeSyncer(syncCh, done)
 		p := newProcessor(processorParams{
+		namespace:         "",
 			logger:            testLogger,
 			broker:            rdbClient,
 			baseCtxFn:         context.Background,
@@ -744,8 +747,8 @@ func TestProcessorWithStrictPriority(t *testing.T) {
 		time.Sleep(tc.wait)
 		// Make sure no tasks are stuck in active list.
 		for _, qname := range tc.queues {
-			if l := r.LLen(context.Background(), base.ActiveKey(qname)).Val(); l != 0 {
-				t.Errorf("%q has %d tasks, want 0", base.ActiveKey(qname), l)
+			if l := r.LLen(context.Background(), base.ActiveKey("", qname)).Val(); l != 0 {
+				t.Errorf("%q has %d tasks, want 0", base.ActiveKey("", qname), l)
 			}
 		}
 		p.shutdown()

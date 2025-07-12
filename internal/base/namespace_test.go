@@ -23,9 +23,9 @@ func TestTaskKeyWithNamespace(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := TaskKeyWithNamespace(tc.namespace, tc.qname, tc.id)
+		got := TaskKey(tc.namespace, tc.qname, tc.id)
 		if got != tc.want {
-			t.Errorf("TaskKeyWithNamespace(%q, %q, %s) = %q, want %q", tc.namespace, tc.qname, tc.id, got, tc.want)
+			t.Errorf("TaskKey(%q, %q, %s) = %q, want %q", tc.namespace, tc.qname, tc.id, got, tc.want)
 		}
 	}
 }
@@ -43,9 +43,9 @@ func TestQueueKeyPrefixWithNamespace(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := QueueKeyPrefixWithNamespace(tc.namespace, tc.qname)
+		got := QueueKeyPrefix(tc.namespace, tc.qname)
 		if got != tc.want {
-			t.Errorf("QueueKeyPrefixWithNamespace(%q, %q) = %q, want %q", tc.namespace, tc.qname, got, tc.want)
+			t.Errorf("QueueKeyPrefix(%q, %q) = %q, want %q", tc.namespace, tc.qname, got, tc.want)
 		}
 	}
 }
@@ -63,9 +63,9 @@ func TestPendingKeyWithNamespace(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := PendingKeyWithNamespace(tc.namespace, tc.qname)
+		got := PendingKey(tc.namespace, tc.qname)
 		if got != tc.want {
-			t.Errorf("PendingKeyWithNamespace(%q, %q) = %q, want %q", tc.namespace, tc.qname, got, tc.want)
+			t.Errorf("PendingKey(%q, %q) = %q, want %q", tc.namespace, tc.qname, got, tc.want)
 		}
 	}
 }
@@ -83,9 +83,9 @@ func TestActiveKeyWithNamespace(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := ActiveKeyWithNamespace(tc.namespace, tc.qname)
+		got := ActiveKey(tc.namespace, tc.qname)
 		if got != tc.want {
-			t.Errorf("ActiveKeyWithNamespace(%q, %q) = %q, want %q", tc.namespace, tc.qname, got, tc.want)
+			t.Errorf("ActiveKey(%q, %q) = %q, want %q", tc.namespace, tc.qname, got, tc.want)
 		}
 	}
 }
@@ -103,9 +103,9 @@ func TestLeaseKeyWithNamespace(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := LeaseKeyWithNamespace(tc.namespace, tc.qname)
+		got := LeaseKey(tc.namespace, tc.qname)
 		if got != tc.want {
-			t.Errorf("LeaseKeyWithNamespace(%q, %q) = %q, want %q", tc.namespace, tc.qname, got, tc.want)
+			t.Errorf("LeaseKey(%q, %q) = %q, want %q", tc.namespace, tc.qname, got, tc.want)
 		}
 	}
 }
@@ -123,9 +123,9 @@ func TestScheduledKeyWithNamespace(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := ScheduledKeyWithNamespace(tc.namespace, tc.qname)
+		got := ScheduledKey(tc.namespace, tc.qname)
 		if got != tc.want {
-			t.Errorf("ScheduledKeyWithNamespace(%q, %q) = %q, want %q", tc.namespace, tc.qname, got, tc.want)
+			t.Errorf("ScheduledKey(%q, %q) = %q, want %q", tc.namespace, tc.qname, got, tc.want)
 		}
 	}
 }
@@ -143,9 +143,9 @@ func TestRetryKeyWithNamespace(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := RetryKeyWithNamespace(tc.namespace, tc.qname)
+		got := RetryKey(tc.namespace, tc.qname)
 		if got != tc.want {
-			t.Errorf("RetryKeyWithNamespace(%q, %q) = %q, want %q", tc.namespace, tc.qname, got, tc.want)
+			t.Errorf("RetryKey(%q, %q) = %q, want %q", tc.namespace, tc.qname, got, tc.want)
 		}
 	}
 }
@@ -163,9 +163,9 @@ func TestArchivedKeyWithNamespace(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := ArchivedKeyWithNamespace(tc.namespace, tc.qname)
+		got := ArchivedKey(tc.namespace, tc.qname)
 		if got != tc.want {
-			t.Errorf("ArchivedKeyWithNamespace(%q, %q) = %q, want %q", tc.namespace, tc.qname, got, tc.want)
+			t.Errorf("ArchivedKey(%q, %q) = %q, want %q", tc.namespace, tc.qname, got, tc.want)
 		}
 	}
 }
@@ -183,9 +183,9 @@ func TestCompletedKeyWithNamespace(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := CompletedKeyWithNamespace(tc.namespace, tc.qname)
+		got := CompletedKey(tc.namespace, tc.qname)
 		if got != tc.want {
-			t.Errorf("CompletedKeyWithNamespace(%q, %q) = %q, want %q", tc.namespace, tc.qname, got, tc.want)
+			t.Errorf("CompletedKey(%q, %q) = %q, want %q", tc.namespace, tc.qname, got, tc.want)
 		}
 	}
 }
@@ -204,11 +204,11 @@ func TestUniqueKeyWithNamespace(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := UniqueKeyWithNamespace(tc.namespace, tc.qname, tc.tasktype, tc.payload)
+		got := UniqueKey(tc.namespace, tc.qname, tc.tasktype, tc.payload)
 		// Note: We can't predict the exact hash, so we'll just check the prefix
 		expectedPrefix := fmt.Sprintf("%s:{%s}:unique:", tc.namespace, tc.qname)
 		if len(got) < len(expectedPrefix) || got[:len(expectedPrefix)] != expectedPrefix {
-			t.Errorf("UniqueKeyWithNamespace(%q, %q, %q, %v) = %q, want prefix %q", tc.namespace, tc.qname, tc.tasktype, tc.payload, got, expectedPrefix)
+			t.Errorf("UniqueKey(%q, %q, %q, %v) = %q, want prefix %q", tc.namespace, tc.qname, tc.tasktype, tc.payload, got, expectedPrefix)
 		}
 	}
 }
@@ -227,9 +227,9 @@ func TestGroupKeyWithNamespace(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := GroupKeyWithNamespace(tc.namespace, tc.qname, tc.gname)
+		got := GroupKey(tc.namespace, tc.qname, tc.gname)
 		if got != tc.want {
-			t.Errorf("GroupKeyWithNamespace(%q, %q, %q) = %q, want %q", tc.namespace, tc.qname, tc.gname, got, tc.want)
+			t.Errorf("GroupKey(%q, %q, %q) = %q, want %q", tc.namespace, tc.qname, tc.gname, got, tc.want)
 		}
 	}
 }
@@ -249,9 +249,9 @@ func TestAggregationSetKeyWithNamespace(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := AggregationSetKeyWithNamespace(tc.namespace, tc.qname, tc.gname, tc.setID)
+		got := AggregationSetKey(tc.namespace, tc.qname, tc.gname, tc.setID)
 		if got != tc.want {
-			t.Errorf("AggregationSetKeyWithNamespace(%q, %q, %q, %q) = %q, want %q", tc.namespace, tc.qname, tc.gname, tc.setID, got, tc.want)
+			t.Errorf("AggregationSetKey(%q, %q, %q, %q) = %q, want %q", tc.namespace, tc.qname, tc.gname, tc.setID, got, tc.want)
 		}
 	}
 }
@@ -295,9 +295,9 @@ func TestServerInfoKeyWithNamespace(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := ServerInfoKeyWithNamespace(tc.namespace, tc.hostname, tc.pid, tc.serverID)
+		got := ServerInfoKey(tc.namespace, tc.hostname, tc.pid, tc.serverID)
 		if got != tc.want {
-			t.Errorf("ServerInfoKeyWithNamespace(%q, %q, %d, %q) = %q, want %q", tc.namespace, tc.hostname, tc.pid, tc.serverID, got, tc.want)
+			t.Errorf("ServerInfoKey(%q, %q, %d, %q) = %q, want %q", tc.namespace, tc.hostname, tc.pid, tc.serverID, got, tc.want)
 		}
 	}
 }
@@ -317,9 +317,9 @@ func TestWorkersKeyWithNamespace(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := WorkersKeyWithNamespace(tc.namespace, tc.hostname, tc.pid, tc.serverID)
+		got := WorkersKey(tc.namespace, tc.hostname, tc.pid, tc.serverID)
 		if got != tc.want {
-			t.Errorf("WorkersKeyWithNamespace(%q, %q, %d, %q) = %q, want %q", tc.namespace, tc.hostname, tc.pid, tc.serverID, got, tc.want)
+			t.Errorf("WorkersKey(%q, %q, %d, %q) = %q, want %q", tc.namespace, tc.hostname, tc.pid, tc.serverID, got, tc.want)
 		}
 	}
 }
@@ -337,9 +337,9 @@ func TestSchedulerEntriesKeyWithNamespace(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := SchedulerEntriesKeyWithNamespace(tc.namespace, tc.schedulerID)
+		got := SchedulerEntriesKey(tc.namespace, tc.schedulerID)
 		if got != tc.want {
-			t.Errorf("SchedulerEntriesKeyWithNamespace(%q, %q) = %q, want %q", tc.namespace, tc.schedulerID, got, tc.want)
+			t.Errorf("SchedulerEntriesKey(%q, %q) = %q, want %q", tc.namespace, tc.schedulerID, got, tc.want)
 		}
 	}
 }
@@ -357,9 +357,9 @@ func TestSchedulerHistoryKeyWithNamespace(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := SchedulerHistoryKeyWithNamespace(tc.namespace, tc.schedulerID)
+		got := SchedulerHistoryKey(tc.namespace, tc.schedulerID)
 		if got != tc.want {
-			t.Errorf("SchedulerHistoryKeyWithNamespace(%q, %q) = %q, want %q", tc.namespace, tc.schedulerID, got, tc.want)
+			t.Errorf("SchedulerHistoryKey(%q, %q) = %q, want %q", tc.namespace, tc.schedulerID, got, tc.want)
 		}
 	}
 }

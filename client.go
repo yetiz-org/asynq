@@ -398,7 +398,7 @@ func (c *Client) EnqueueContext(ctx context.Context, task *Task, opts ...Option)
 	}
 	var uniqueKey string
 	if opt.uniqueTTL > 0 {
-		uniqueKey = base.UniqueKey(opt.queue, task.Type(), task.Payload())
+		uniqueKey = base.UniqueKey(c.namespace, opt.queue, task.Type(), task.Payload())
 	}
 	msg := &base.TaskMessage{
 		ID:        opt.taskID,

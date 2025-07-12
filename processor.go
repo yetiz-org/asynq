@@ -25,9 +25,10 @@ import (
 )
 
 type processor struct {
-	logger *log.Logger
-	broker base.Broker
-	clock  timeutil.Clock
+	logger    *log.Logger
+	broker    base.Broker
+	namespace string
+	clock     timeutil.Clock
 
 	handler   Handler
 	baseCtxFn func() context.Context
@@ -75,6 +76,7 @@ type processor struct {
 type processorParams struct {
 	logger            *log.Logger
 	broker            base.Broker
+	namespace         string
 	baseCtxFn         func() context.Context
 	retryDelayFunc    RetryDelayFunc
 	taskCheckInterval time.Duration
@@ -100,6 +102,7 @@ func newProcessor(params processorParams) *processor {
 	return &processor{
 		logger:            params.logger,
 		broker:            params.broker,
+		namespace:         params.namespace,
 		baseCtxFn:         params.baseCtxFn,
 		clock:             timeutil.NewRealClock(),
 		queueConfig:       queues,
@@ -289,8 +292,8 @@ func (p *processor) markAsComplete(l *base.Lease, msg *base.TaskMessage) {
 	defer cancel()
 	err := p.broker.MarkAsComplete(ctx, msg)
 	if err != nil {
-		errMsg := fmt.Sprintf("Could not move task id=%s type=%q from %q to %q:  %+v",
-			msg.ID, msg.Type, base.ActiveKey(msg.Queue), base.CompletedKey(msg.Queue), err)
+		errMsg := fmt.Sprintf("Could not move task id=%s type=%q from %q to %q: %+v",
+			msg.ID, msg.Type, base.ActiveKey(p.namespace, msg.Queue), base.CompletedKey(p.namespace, msg.Queue), err)
 		p.logger.Warnf("%s; Will retry syncing", errMsg)
 		p.syncRequestCh <- &syncRequest{
 			fn: func() error {
@@ -311,7 +314,7 @@ func (p *processor) markAsDone(l *base.Lease, msg *base.TaskMessage) {
 	defer cancel()
 	err := p.broker.Done(ctx, msg)
 	if err != nil {
-		errMsg := fmt.Sprintf("Could not remove task id=%s type=%q from %q err: %+v", msg.ID, msg.Type, base.ActiveKey(msg.Queue), err)
+		errMsg := fmt.Sprintf("Could not remove task id=%s type=%q from %q: %+v", msg.ID, msg.Type, base.ActiveKey(p.namespace, msg.Queue), err)
 		p.logger.Warnf("%s; Will retry syncing", errMsg)
 		p.syncRequestCh <- &syncRequest{
 			fn: func() error {
@@ -358,7 +361,7 @@ func (p *processor) retry(l *base.Lease, msg *base.TaskMessage, e error, isFailu
 	retryAt := time.Now().Add(d)
 	err := p.broker.Retry(ctx, msg, retryAt, e.Error(), isFailure)
 	if err != nil {
-		errMsg := fmt.Sprintf("Could not move task id=%s from %q to %q", msg.ID, base.ActiveKey(msg.Queue), base.RetryKey(msg.Queue))
+		errMsg := fmt.Sprintf("Could not move task id=%s from %q to %q", msg.ID, base.ActiveKey(p.namespace, msg.Queue), base.RetryKey(p.namespace, msg.Queue))
 		p.logger.Warnf("%s; Will retry syncing", errMsg)
 		p.syncRequestCh <- &syncRequest{
 			fn: func() error {
@@ -379,7 +382,7 @@ func (p *processor) archive(l *base.Lease, msg *base.TaskMessage, e error) {
 	defer cancel()
 	err := p.broker.Archive(ctx, msg, e.Error())
 	if err != nil {
-		errMsg := fmt.Sprintf("Could not move task id=%s from %q to %q", msg.ID, base.ActiveKey(msg.Queue), base.ArchivedKey(msg.Queue))
+		errMsg := fmt.Sprintf("Could not move task id=%s from %q to %q", msg.ID, base.ActiveKey(p.namespace, msg.Queue), base.ArchivedKey(p.namespace, msg.Queue))
 		p.logger.Warnf("%s; Will retry syncing", errMsg)
 		p.syncRequestCh <- &syncRequest{
 			fn: func() error {

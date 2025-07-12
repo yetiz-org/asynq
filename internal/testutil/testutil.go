@@ -214,49 +214,49 @@ func FlushDB(tb testing.TB, r redis.UniversalClient) {
 func SeedPendingQueue(tb testing.TB, r redis.UniversalClient, msgs []*base.TaskMessage, qname string) {
 	tb.Helper()
 	r.SAdd(context.Background(), base.AllQueuesKey(""), qname)
-	seedRedisList(tb, r, base.PendingKey(qname), msgs, base.TaskStatePending)
+	seedRedisList(tb, r, base.PendingKey("", qname), msgs, base.TaskStatePending)
 }
 
 // SeedActiveQueue initializes the active queue with the given messages.
 func SeedActiveQueue(tb testing.TB, r redis.UniversalClient, msgs []*base.TaskMessage, qname string) {
 	tb.Helper()
 	r.SAdd(context.Background(), base.AllQueuesKey(""), qname)
-	seedRedisList(tb, r, base.ActiveKey(qname), msgs, base.TaskStateActive)
+	seedRedisList(tb, r, base.ActiveKey("", qname), msgs, base.TaskStateActive)
 }
 
 // SeedScheduledQueue initializes the scheduled queue with the given messages.
 func SeedScheduledQueue(tb testing.TB, r redis.UniversalClient, entries []base.Z, qname string) {
 	tb.Helper()
 	r.SAdd(context.Background(), base.AllQueuesKey(""), qname)
-	seedRedisZSet(tb, r, base.ScheduledKey(qname), entries, base.TaskStateScheduled)
+	seedRedisZSet(tb, r, base.ScheduledKey("", qname), entries, base.TaskStateScheduled)
 }
 
 // SeedRetryQueue initializes the retry queue with the given messages.
 func SeedRetryQueue(tb testing.TB, r redis.UniversalClient, entries []base.Z, qname string) {
 	tb.Helper()
 	r.SAdd(context.Background(), base.AllQueuesKey(""), qname)
-	seedRedisZSet(tb, r, base.RetryKey(qname), entries, base.TaskStateRetry)
+	seedRedisZSet(tb, r, base.RetryKey("", qname), entries, base.TaskStateRetry)
 }
 
 // SeedArchivedQueue initializes the archived queue with the given messages.
 func SeedArchivedQueue(tb testing.TB, r redis.UniversalClient, entries []base.Z, qname string) {
 	tb.Helper()
 	r.SAdd(context.Background(), base.AllQueuesKey(""), qname)
-	seedRedisZSet(tb, r, base.ArchivedKey(qname), entries, base.TaskStateArchived)
+	seedRedisZSet(tb, r, base.ArchivedKey("", qname), entries, base.TaskStateArchived)
 }
 
 // SeedLease initializes the lease set with the given entries.
 func SeedLease(tb testing.TB, r redis.UniversalClient, entries []base.Z, qname string) {
 	tb.Helper()
 	r.SAdd(context.Background(), base.AllQueuesKey(""), qname)
-	seedRedisZSet(tb, r, base.LeaseKey(qname), entries, base.TaskStateActive)
+	seedRedisZSet(tb, r, base.LeaseKey("", qname), entries, base.TaskStateActive)
 }
 
 // SeedCompletedQueue initializes the completed set with the given entries.
 func SeedCompletedQueue(tb testing.TB, r redis.UniversalClient, entries []base.Z, qname string) {
 	tb.Helper()
 	r.SAdd(context.Background(), base.AllQueuesKey(""), qname)
-	seedRedisZSet(tb, r, base.CompletedKey(qname), entries, base.TaskStateCompleted)
+	seedRedisZSet(tb, r, base.CompletedKey("", qname), entries, base.TaskStateCompleted)
 }
 
 // SeedGroup initializes the group with the given entries.
@@ -264,14 +264,14 @@ func SeedGroup(tb testing.TB, r redis.UniversalClient, entries []base.Z, qname, 
 	tb.Helper()
 	ctx := context.Background()
 	r.SAdd(ctx, base.AllQueuesKey(""), qname)
-	r.SAdd(ctx, base.AllGroups(qname), gname)
-	seedRedisZSet(tb, r, base.GroupKey(qname, gname), entries, base.TaskStateAggregating)
+	r.SAdd(ctx, base.AllGroups("", qname), gname)
+	seedRedisZSet(tb, r, base.GroupKey("", qname, gname), entries, base.TaskStateAggregating)
 }
 
 func SeedAggregationSet(tb testing.TB, r redis.UniversalClient, entries []base.Z, qname, gname, setID string) {
 	tb.Helper()
 	r.SAdd(context.Background(), base.AllQueuesKey(""), qname)
-	seedRedisZSet(tb, r, base.AggregationSetKey(qname, gname, setID), entries, base.TaskStateAggregating)
+	seedRedisZSet(tb, r, base.AggregationSetKey("", qname, gname, setID), entries, base.TaskStateAggregating)
 }
 
 // SeedAllPendingQueues initializes all of the specified queues with the given messages.
@@ -352,7 +352,7 @@ func seedRedisList(tb testing.TB, c redis.UniversalClient, key string,
 		if err := c.LPush(context.Background(), key, msg.ID).Err(); err != nil {
 			tb.Fatal(err)
 		}
-		taskKey := base.TaskKey(msg.Queue, msg.ID)
+		taskKey := base.TaskKey("", msg.Queue, msg.ID)
 		data := map[string]interface{}{
 			"msg":        encoded,
 			"state":      state.String(),
@@ -381,7 +381,7 @@ func seedRedisZSet(tb testing.TB, c redis.UniversalClient, key string,
 		if err := c.ZAdd(context.Background(), key, z).Err(); err != nil {
 			tb.Fatal(err)
 		}
-		taskKey := base.TaskKey(msg.Queue, msg.ID)
+		taskKey := base.TaskKey("", msg.Queue, msg.ID)
 		data := map[string]interface{}{
 			"msg":        encoded,
 			"state":      state.String(),
@@ -482,17 +482,17 @@ func GetCompletedEntries(tb testing.TB, r redis.UniversalClient, qname string) [
 func GetGroupEntries(tb testing.TB, r redis.UniversalClient, qname, groupKey string) []base.Z {
 	tb.Helper()
 	return getMessagesFromZSetWithScores(tb, r, qname,
-		func(qname string) string { return base.GroupKey(qname, groupKey) }, base.TaskStateAggregating)
+		func(namespace, qname string) string { return base.GroupKey(namespace, qname, groupKey) }, base.TaskStateAggregating)
 }
 
 // Retrieves all messages stored under `keyFn(qname)` key in redis list.
 func getMessagesFromList(tb testing.TB, r redis.UniversalClient, qname string,
-	keyFn func(qname string) string, state base.TaskState) []*base.TaskMessage {
+	keyFn func(namespace, qname string) string, state base.TaskState) []*base.TaskMessage {
 	tb.Helper()
-	ids := r.LRange(context.Background(), keyFn(qname), 0, -1).Val()
+	ids := r.LRange(context.Background(), keyFn("", qname), 0, -1).Val()
 	var msgs []*base.TaskMessage
 	for _, id := range ids {
-		taskKey := base.TaskKey(qname, id)
+		taskKey := base.TaskKey("", qname, id)
 		data := r.HGet(context.Background(), taskKey, "msg").Val()
 		msgs = append(msgs, MustUnmarshal(tb, data))
 		if gotState := r.HGet(context.Background(), taskKey, "state").Val(); gotState != state.String() {
@@ -504,12 +504,12 @@ func getMessagesFromList(tb testing.TB, r redis.UniversalClient, qname string,
 
 // Retrieves all messages stored under `keyFn(qname)` key in redis zset (sorted-set).
 func getMessagesFromZSet(tb testing.TB, r redis.UniversalClient, qname string,
-	keyFn func(qname string) string, state base.TaskState) []*base.TaskMessage {
+	keyFn func(namespace, qname string) string, state base.TaskState) []*base.TaskMessage {
 	tb.Helper()
-	ids := r.ZRange(context.Background(), keyFn(qname), 0, -1).Val()
+	ids := r.ZRange(context.Background(), keyFn("", qname), 0, -1).Val()
 	var msgs []*base.TaskMessage
 	for _, id := range ids {
-		taskKey := base.TaskKey(qname, id)
+		taskKey := base.TaskKey("", qname, id)
 		msg := r.HGet(context.Background(), taskKey, "msg").Val()
 		msgs = append(msgs, MustUnmarshal(tb, msg))
 		if gotState := r.HGet(context.Background(), taskKey, "state").Val(); gotState != state.String() {
@@ -521,13 +521,13 @@ func getMessagesFromZSet(tb testing.TB, r redis.UniversalClient, qname string,
 
 // Retrieves all messages along with their scores stored under `keyFn(qname)` key in redis zset (sorted-set).
 func getMessagesFromZSetWithScores(tb testing.TB, r redis.UniversalClient,
-	qname string, keyFn func(qname string) string, state base.TaskState) []base.Z {
+	qname string, keyFn func(namespace, qname string) string, state base.TaskState) []base.Z {
 	tb.Helper()
-	zs := r.ZRangeWithScores(context.Background(), keyFn(qname), 0, -1).Val()
+	zs := r.ZRangeWithScores(context.Background(), keyFn("", qname), 0, -1).Val()
 	var res []base.Z
 	for _, z := range zs {
 		taskID := z.Member.(string)
-		taskKey := base.TaskKey(qname, taskID)
+		taskKey := base.TaskKey("", qname, taskID)
 		msg := r.HGet(context.Background(), taskKey, "msg").Val()
 		res = append(res, base.Z{Message: MustUnmarshal(tb, msg), Score: int64(z.Score)})
 		if gotState := r.HGet(context.Background(), taskKey, "state").Val(); gotState != state.String() {
@@ -548,7 +548,7 @@ func SeedTasks(tb testing.TB, r redis.UniversalClient, taskData []*TaskSeedData)
 	for _, data := range taskData {
 		msg := data.Msg
 		ctx := context.Background()
-		key := base.TaskKey(msg.Queue, msg.ID)
+		key := base.TaskKey("", msg.Queue, msg.ID)
 		v := map[string]interface{}{
 			"msg":        MustMarshal(tb, msg),
 			"state":      data.State.String(),

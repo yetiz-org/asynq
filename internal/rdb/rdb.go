@@ -131,8 +131,8 @@ func (r *RDB) Enqueue(ctx context.Context, msg *base.TaskMessage) error {
 		r.queuesPublished.Store(msg.Queue, true)
 	}
 	keys := []string{
-		base.TaskKey(msg.Queue, msg.ID),
-		base.PendingKey(msg.Queue),
+		base.TaskKey(r.namespace, msg.Queue, msg.ID),
+		base.PendingKey(r.namespace, msg.Queue),
 	}
 	argv := []interface{}{
 		encoded,
@@ -197,8 +197,8 @@ func (r *RDB) EnqueueUnique(ctx context.Context, msg *base.TaskMessage, ttl time
 	}
 	keys := []string{
 		msg.UniqueKey,
-		base.TaskKey(msg.Queue, msg.ID),
-		base.PendingKey(msg.Queue),
+		base.TaskKey(r.namespace, msg.Queue, msg.ID),
+		base.PendingKey(r.namespace, msg.Queue),
 	}
 	argv := []interface{}{
 		msg.ID,
@@ -255,15 +255,15 @@ func (r *RDB) Dequeue(qnames ...string) (msg *base.TaskMessage, leaseExpirationT
 	var op errors.Op = "rdb.Dequeue"
 	for _, qname := range qnames {
 		keys := []string{
-			base.PendingKey(qname),
-			base.PausedKey(qname),
-			base.ActiveKey(qname),
-			base.LeaseKey(qname),
+			base.PendingKey(r.namespace, qname),
+			base.PausedKey(r.namespace, qname),
+			base.ActiveKey(r.namespace, qname),
+			base.LeaseKey(r.namespace, qname),
 		}
 		leaseExpirationTime = r.clock.Now().Add(LeaseDuration)
 		argv := []interface{}{
 			leaseExpirationTime.Unix(),
-			base.TaskKeyPrefix(qname),
+			base.TaskKeyPrefix(r.namespace, qname),
 		}
 		res, err := dequeueCmd.Run(context.Background(), r.client, keys, argv...).Result()
 		if err == redis.Nil {
@@ -358,11 +358,11 @@ func (r *RDB) Done(ctx context.Context, msg *base.TaskMessage) error {
 	now := r.clock.Now()
 	expireAt := now.Add(statsTTL)
 	keys := []string{
-		base.ActiveKey(msg.Queue),
-		base.LeaseKey(msg.Queue),
-		base.TaskKey(msg.Queue, msg.ID),
-		base.ProcessedKey(msg.Queue, now),
-		base.ProcessedTotalKey(msg.Queue),
+		base.ActiveKey(r.namespace, msg.Queue),
+		base.LeaseKey(r.namespace, msg.Queue),
+		base.TaskKey(r.namespace, msg.Queue, msg.ID),
+		base.ProcessedKey(r.namespace, msg.Queue, now),
+		base.ProcessedTotalKey(r.namespace, msg.Queue),
 	}
 	argv := []interface{}{
 		msg.ID,
@@ -465,12 +465,12 @@ func (r *RDB) MarkAsComplete(ctx context.Context, msg *base.TaskMessage) error {
 		return errors.E(op, errors.Unknown, fmt.Sprintf("cannot encode message: %v", err))
 	}
 	keys := []string{
-		base.ActiveKey(msg.Queue),
-		base.LeaseKey(msg.Queue),
-		base.CompletedKey(msg.Queue),
-		base.TaskKey(msg.Queue, msg.ID),
-		base.ProcessedKey(msg.Queue, now),
-		base.ProcessedTotalKey(msg.Queue),
+		base.ActiveKey(r.namespace, msg.Queue),
+		base.LeaseKey(r.namespace, msg.Queue),
+		base.CompletedKey(r.namespace, msg.Queue),
+		base.TaskKey(r.namespace, msg.Queue, msg.ID),
+		base.ProcessedKey(r.namespace, msg.Queue, now),
+		base.ProcessedTotalKey(r.namespace, msg.Queue),
 	}
 	argv := []interface{}{
 		msg.ID,
@@ -508,10 +508,10 @@ return redis.status_reply("OK")`)
 func (r *RDB) Requeue(ctx context.Context, msg *base.TaskMessage) error {
 	var op errors.Op = "rdb.Requeue"
 	keys := []string{
-		base.ActiveKey(msg.Queue),
-		base.LeaseKey(msg.Queue),
-		base.PendingKey(msg.Queue),
-		base.TaskKey(msg.Queue, msg.ID),
+		base.ActiveKey(r.namespace, msg.Queue),
+		base.LeaseKey(r.namespace, msg.Queue),
+		base.PendingKey(r.namespace, msg.Queue),
+		base.TaskKey(r.namespace, msg.Queue, msg.ID),
 	}
 	return r.runScript(ctx, op, requeueCmd, keys, msg.ID)
 }
@@ -554,9 +554,9 @@ func (r *RDB) AddToGroup(ctx context.Context, msg *base.TaskMessage, groupKey st
 		r.queuesPublished.Store(msg.Queue, true)
 	}
 	keys := []string{
-		base.TaskKey(msg.Queue, msg.ID),
-		base.GroupKey(msg.Queue, groupKey),
-		base.AllGroups(msg.Queue),
+		base.TaskKey(r.namespace, msg.Queue, msg.ID),
+		base.GroupKey(r.namespace, msg.Queue, groupKey),
+		base.AllGroups(r.namespace, msg.Queue),
 	}
 	argv := []interface{}{
 		encoded,
@@ -619,10 +619,10 @@ func (r *RDB) AddToGroupUnique(ctx context.Context, msg *base.TaskMessage, group
 		r.queuesPublished.Store(msg.Queue, true)
 	}
 	keys := []string{
-		base.TaskKey(msg.Queue, msg.ID),
-		base.GroupKey(msg.Queue, groupKey),
-		base.AllGroups(msg.Queue),
-		base.UniqueKey(msg.Queue, msg.Type, msg.Payload),
+		base.TaskKey(r.namespace, msg.Queue, msg.ID),
+		base.GroupKey(r.namespace, msg.Queue, groupKey),
+		base.AllGroups(r.namespace, msg.Queue),
+		base.UniqueKey(r.namespace, msg.Queue, msg.Type, msg.Payload),
 	}
 	argv := []interface{}{
 		encoded,
@@ -679,8 +679,8 @@ func (r *RDB) Schedule(ctx context.Context, msg *base.TaskMessage, processAt tim
 		r.queuesPublished.Store(msg.Queue, true)
 	}
 	keys := []string{
-		base.TaskKey(msg.Queue, msg.ID),
-		base.ScheduledKey(msg.Queue),
+		base.TaskKey(r.namespace, msg.Queue, msg.ID),
+		base.ScheduledKey(r.namespace, msg.Queue),
 	}
 	argv := []interface{}{
 		encoded,
@@ -742,8 +742,8 @@ func (r *RDB) ScheduleUnique(ctx context.Context, msg *base.TaskMessage, process
 	}
 	keys := []string{
 		msg.UniqueKey,
-		base.TaskKey(msg.Queue, msg.ID),
-		base.ScheduledKey(msg.Queue),
+		base.TaskKey(r.namespace, msg.Queue, msg.ID),
+		base.ScheduledKey(r.namespace, msg.Queue),
 	}
 	argv := []interface{}{
 		msg.ID,
@@ -826,14 +826,14 @@ func (r *RDB) Retry(ctx context.Context, msg *base.TaskMessage, processAt time.T
 	}
 	expireAt := now.Add(statsTTL)
 	keys := []string{
-		base.TaskKey(msg.Queue, msg.ID),
-		base.ActiveKey(msg.Queue),
-		base.LeaseKey(msg.Queue),
-		base.RetryKey(msg.Queue),
-		base.ProcessedKey(msg.Queue, now),
-		base.FailedKey(msg.Queue, now),
-		base.ProcessedTotalKey(msg.Queue),
-		base.FailedTotalKey(msg.Queue),
+		base.TaskKey(r.namespace, msg.Queue, msg.ID),
+		base.ActiveKey(r.namespace, msg.Queue),
+		base.LeaseKey(r.namespace, msg.Queue),
+		base.RetryKey(r.namespace, msg.Queue),
+		base.ProcessedKey(r.namespace, msg.Queue, now),
+		base.FailedKey(r.namespace, msg.Queue, now),
+		base.ProcessedTotalKey(r.namespace, msg.Queue),
+		base.FailedTotalKey(r.namespace, msg.Queue),
 	}
 	argv := []interface{}{
 		msg.ID,
@@ -926,15 +926,15 @@ func (r *RDB) Archive(ctx context.Context, msg *base.TaskMessage, errMsg string)
 	cutoff := now.AddDate(0, 0, -archivedExpirationInDays)
 	expireAt := now.Add(statsTTL)
 	keys := []string{
-		base.TaskKey(msg.Queue, msg.ID),
-		base.ActiveKey(msg.Queue),
-		base.LeaseKey(msg.Queue),
-		base.ArchivedKey(msg.Queue),
-		base.ProcessedKey(msg.Queue, now),
-		base.FailedKey(msg.Queue, now),
-		base.ProcessedTotalKey(msg.Queue),
-		base.FailedTotalKey(msg.Queue),
-		base.TaskKeyPrefix(msg.Queue),
+		base.TaskKey(r.namespace, msg.Queue, msg.ID),
+		base.ActiveKey(r.namespace, msg.Queue),
+		base.LeaseKey(r.namespace, msg.Queue),
+		base.ArchivedKey(r.namespace, msg.Queue),
+		base.ProcessedKey(r.namespace, msg.Queue, now),
+		base.FailedKey(r.namespace, msg.Queue, now),
+		base.ProcessedTotalKey(r.namespace, msg.Queue),
+		base.FailedTotalKey(r.namespace, msg.Queue),
+		base.TaskKeyPrefix(r.namespace, msg.Queue),
 	}
 	argv := []interface{}{
 		msg.ID,
@@ -1013,10 +1013,10 @@ func (r *RDB) forward(delayedKey, pendingKey, taskKeyPrefix, groupKeyPrefix stri
 // forwardAll checks for tasks in scheduled/retry state that are ready to be run, and updates
 // their state to "pending" or "aggregating".
 func (r *RDB) forwardAll(qname string) (err error) {
-	delayedKeys := []string{base.ScheduledKey(qname), base.RetryKey(qname)}
-	pendingKey := base.PendingKey(qname)
-	taskKeyPrefix := base.TaskKeyPrefix(qname)
-	groupKeyPrefix := base.GroupKeyPrefix(qname)
+	delayedKeys := []string{base.ScheduledKey(r.namespace, qname), base.RetryKey(r.namespace, qname)}
+	pendingKey := base.PendingKey(r.namespace, qname)
+	taskKeyPrefix := base.TaskKeyPrefix(r.namespace, qname)
+	groupKeyPrefix := base.GroupKeyPrefix(r.namespace, qname)
 	for _, delayedKey := range delayedKeys {
 		n := 1
 		for n != 0 {
@@ -1032,7 +1032,7 @@ func (r *RDB) forwardAll(qname string) (err error) {
 // ListGroups returns a list of all known groups in the given queue.
 func (r *RDB) ListGroups(qname string) ([]string, error) {
 	var op errors.Op = "RDB.ListGroups"
-	groups, err := r.client.SMembers(context.Background(), base.AllGroups(qname)).Result()
+	groups, err := r.client.SMembers(context.Background(), base.AllGroups(r.namespace, qname)).Result()
 	if err != nil {
 		return nil, errors.E(op, errors.Unknown, &errors.RedisCommandError{Command: "smembers", Err: err})
 	}
@@ -1138,10 +1138,10 @@ func (r *RDB) AggregationCheck(qname, gname string, t time.Time, gracePeriod, ma
 	aggregationSetID := uuid.NewString()
 	expireTime := r.clock.Now().Add(aggregationTimeout)
 	keys := []string{
-		base.GroupKey(qname, gname),
-		base.AggregationSetKey(qname, gname, aggregationSetID),
-		base.AllAggregationSets(qname),
-		base.AllGroups(qname),
+		base.GroupKey(r.namespace, qname, gname),
+		base.AggregationSetKey(r.namespace, qname, gname, aggregationSetID),
+		base.AllAggregationSets(r.namespace, qname),
+		base.AllGroups(r.namespace, qname),
 	}
 	argv := []interface{}{
 		maxSize,
@@ -1189,9 +1189,9 @@ return msgs
 func (r *RDB) ReadAggregationSet(qname, gname, setID string) ([]*base.TaskMessage, time.Time, error) {
 	var op errors.Op = "RDB.ReadAggregationSet"
 	ctx := context.Background()
-	aggSetKey := base.AggregationSetKey(qname, gname, setID)
+	aggSetKey := base.AggregationSetKey(r.namespace, qname, gname, setID)
 	res, err := readAggregationSetCmd.Run(ctx, r.client,
-		[]string{aggSetKey}, base.TaskKeyPrefix(qname)).Result()
+		[]string{aggSetKey}, base.TaskKeyPrefix(r.namespace, qname)).Result()
 	if err != nil {
 		return nil, time.Time{}, errors.E(op, errors.Unknown, fmt.Sprintf("redis eval error: %v", err))
 	}
@@ -1207,7 +1207,7 @@ func (r *RDB) ReadAggregationSet(qname, gname, setID string) ([]*base.TaskMessag
 		}
 		msgs = append(msgs, msg)
 	}
-	deadlineUnix, err := r.client.ZScore(ctx, base.AllAggregationSets(qname), aggSetKey).Result()
+	deadlineUnix, err := r.client.ZScore(ctx, base.AllAggregationSets(r.namespace, qname), aggSetKey).Result()
 	if err != nil {
 		return nil, time.Time{}, errors.E(op, errors.Unknown, &errors.RedisCommandError{Command: "zscore", Err: err})
 	}
@@ -1239,10 +1239,10 @@ return redis.status_reply("OK")
 func (r *RDB) DeleteAggregationSet(ctx context.Context, qname, gname, setID string) error {
 	var op errors.Op = "RDB.DeleteAggregationSet"
 	keys := []string{
-		base.AggregationSetKey(qname, gname, setID),
-		base.AllAggregationSets(qname),
+		base.AggregationSetKey(r.namespace, qname, gname, setID),
+		base.AllAggregationSets(r.namespace, qname),
 	}
-	return r.runScript(ctx, op, deleteAggregationSetCmd, keys, base.TaskKeyPrefix(qname))
+	return r.runScript(ctx, op, deleteAggregationSetCmd, keys, base.TaskKeyPrefix(r.namespace, qname))
 }
 
 // KEYS[1] -> asynq:{<qname>}:aggregation_sets
@@ -1268,7 +1268,7 @@ return redis.status_reply("OK")
 func (r *RDB) ReclaimStaleAggregationSets(qname string) error {
 	var op errors.Op = "RDB.ReclaimStaleAggregationSets"
 	return r.runScript(context.Background(), op, reclaimStateAggregationSetsCmd,
-		[]string{base.AllAggregationSets(qname)}, r.clock.Now().Unix())
+		[]string{base.AllAggregationSets(r.namespace, qname)}, r.clock.Now().Unix())
 }
 
 // KEYS[1] -> asynq:{<qname>}:completed
@@ -1303,10 +1303,10 @@ func (r *RDB) DeleteExpiredCompletedTasks(qname string, batchSize int) error {
 // batch size. It reports the number of tasks deleted.
 func (r *RDB) deleteExpiredCompletedTasks(qname string, batchSize int) (int64, error) {
 	var op errors.Op = "rdb.DeleteExpiredCompletedTasks"
-	keys := []string{base.CompletedKey(qname)}
+	keys := []string{base.CompletedKey(r.namespace, qname)}
 	argv := []interface{}{
 		r.clock.Now().Unix(),
-		base.TaskKeyPrefix(qname),
+		base.TaskKeyPrefix(r.namespace, qname),
 		batchSize,
 	}
 	res, err := deleteExpiredCompletedTasksCmd.Run(context.Background(), r.client, keys, argv...).Result()
@@ -1342,8 +1342,8 @@ func (r *RDB) ListLeaseExpired(cutoff time.Time, qnames ...string) ([]*base.Task
 	var msgs []*base.TaskMessage
 	for _, qname := range qnames {
 		res, err := listLeaseExpiredCmd.Run(context.Background(), r.client,
-			[]string{base.LeaseKey(qname)},
-			cutoff.Unix(), base.TaskKeyPrefix(qname)).Result()
+			[]string{base.LeaseKey(r.namespace, qname)},
+			cutoff.Unix(), base.TaskKeyPrefix(r.namespace, qname)).Result()
 		if err != nil {
 			return nil, errors.E(op, errors.Internal, fmt.Sprintf("redis eval error: %v", err))
 		}
@@ -1372,7 +1372,7 @@ func (r *RDB) ExtendLease(qname string, ids ...string) (expirationTime time.Time
 	}
 	// Use XX option to only update elements that already exist; Don't add new elements
 	// TODO: Consider adding GT option to ensure we only "extend" the lease. Ceveat is that GT is supported from redis v6.2.0 or above.
-	err = r.client.ZAddXX(context.Background(), base.LeaseKey(qname), zs...).Err()
+	err = r.client.ZAddXX(context.Background(), base.LeaseKey(r.namespace, qname), zs...).Err()
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -1412,8 +1412,8 @@ func (r *RDB) WriteServerState(info *base.ServerInfo, workers []*base.WorkerInfo
 		}
 		args = append(args, w.ID, bytes)
 	}
-	skey := base.ServerInfoKey(info.Host, info.PID, info.ServerID)
-	wkey := base.WorkersKey(info.Host, info.PID, info.ServerID)
+	skey := base.ServerInfoKey(r.namespace, info.Host, info.PID, info.ServerID)
+	wkey := base.WorkersKey(r.namespace, info.Host, info.PID, info.ServerID)
 	if err := r.client.ZAdd(ctx, base.AllServersKey(r.namespace), redis.Z{Score: float64(exp.Unix()), Member: skey}).Err(); err != nil {
 		return errors.E(op, errors.Unknown, &errors.RedisCommandError{Command: "sadd", Err: err})
 	}
@@ -1434,8 +1434,8 @@ return redis.status_reply("OK")`)
 func (r *RDB) ClearServerState(host string, pid int, serverID string) error {
 	var op errors.Op = "rdb.ClearServerState"
 	ctx := context.Background()
-	skey := base.ServerInfoKey(host, pid, serverID)
-	wkey := base.WorkersKey(host, pid, serverID)
+	skey := base.ServerInfoKey(r.namespace, host, pid, serverID)
+	wkey := base.WorkersKey(r.namespace, host, pid, serverID)
 	if err := r.client.ZRem(ctx, base.AllServersKey(r.namespace), skey).Err(); err != nil {
 		return errors.E(op, errors.Internal, &errors.RedisCommandError{Command: "zrem", Err: err})
 	}
@@ -1469,7 +1469,7 @@ func (r *RDB) WriteSchedulerEntries(schedulerID string, entries []*base.Schedule
 		args = append(args, bytes)
 	}
 	exp := r.clock.Now().Add(ttl).UTC()
-	key := base.SchedulerEntriesKey(schedulerID)
+	key := base.SchedulerEntriesKey(r.namespace, schedulerID)
 	err := r.client.ZAdd(ctx, base.AllSchedulersKey(r.namespace), redis.Z{Score: float64(exp.Unix()), Member: key}).Err()
 	if err != nil {
 		return errors.E(op, errors.Unknown, &errors.RedisCommandError{Command: "zadd", Err: err})
@@ -1481,7 +1481,7 @@ func (r *RDB) WriteSchedulerEntries(schedulerID string, entries []*base.Schedule
 func (r *RDB) ClearSchedulerEntries(schedulerID string) error {
 	var op errors.Op = "rdb.ClearSchedulerEntries"
 	ctx := context.Background()
-	key := base.SchedulerEntriesKey(schedulerID)
+	key := base.SchedulerEntriesKey(r.namespace, schedulerID)
 	if err := r.client.ZRem(ctx, base.AllSchedulersKey(r.namespace), key).Err(); err != nil {
 		return errors.E(op, errors.Unknown, &errors.RedisCommandError{Command: "zrem", Err: err})
 	}
@@ -1535,7 +1535,7 @@ func (r *RDB) RecordSchedulerEnqueueEvent(entryID string, event *base.SchedulerE
 		return errors.E(op, errors.Internal, fmt.Sprintf("cannot encode scheduler enqueue event: %v", err))
 	}
 	keys := []string{
-		base.SchedulerHistoryKey(entryID),
+		base.SchedulerHistoryKey(r.namespace, entryID),
 	}
 	argv := []interface{}{
 		event.EnqueuedAt.Unix(),
@@ -1549,7 +1549,7 @@ func (r *RDB) RecordSchedulerEnqueueEvent(entryID string, event *base.SchedulerE
 func (r *RDB) ClearSchedulerHistory(entryID string) error {
 	var op errors.Op = "rdb.ClearSchedulerHistory"
 	ctx := context.Background()
-	key := base.SchedulerHistoryKey(entryID)
+	key := base.SchedulerHistoryKey(r.namespace, entryID)
 	if err := r.client.Del(ctx, key).Err(); err != nil {
 		return errors.E(op, errors.Unknown, &errors.RedisCommandError{Command: "del", Err: err})
 	}
@@ -1560,7 +1560,7 @@ func (r *RDB) ClearSchedulerHistory(entryID string) error {
 func (r *RDB) WriteResult(qname, taskID string, data []byte) (int, error) {
 	var op errors.Op = "rdb.WriteResult"
 	ctx := context.Background()
-	taskKey := base.TaskKey(qname, taskID)
+	taskKey := base.TaskKey(r.namespace, qname, taskID)
 	if err := r.client.HSet(ctx, taskKey, "result", data).Err(); err != nil {
 		return 0, errors.E(op, errors.Unknown, &errors.RedisCommandError{Command: "hset", Err: err})
 	}

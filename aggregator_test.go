@@ -148,7 +148,7 @@ func TestAggregator(t *testing.T) {
 			for gname, want := range groups {
 				gotGroup := h.GetGroupEntries(t, r, qname, gname)
 				if diff := cmp.Diff(want, gotGroup, h.SortZSetEntryOpt); diff != "" {
-					t.Errorf("%s: mismatch found in %q; (-want,+got)\n%s", tc.desc, base.GroupKey(qname, gname), diff)
+					t.Errorf("%s: mismatch found in %q; (-want,+got)\n%s", tc.desc, base.GroupKey("", "", qname), diff)
 				}
 			}
 		}
@@ -156,7 +156,7 @@ func TestAggregator(t *testing.T) {
 		for qname, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r, qname)
 			if diff := cmp.Diff(want, gotPending, h.SortMsgOpt, h.IgnoreIDOpt); diff != "" {
-				t.Errorf("%s: mismatch found in %q; (-want,+got)\n%s", tc.desc, base.PendingKey(qname), diff)
+				t.Errorf("%s: mismatch found in %q; (-want,+got)\n%s", tc.desc, base.PendingKey("", qname), diff)
 			}
 		}
 		aggregator.shutdown()

@@ -52,7 +52,7 @@ func TestSyncer(t *testing.T) {
 
 	gotActive := h.GetActiveMessages(t, r, base.DefaultQueueName)
 	if l := len(gotActive); l != 0 {
-		t.Errorf("%q has length %d; want 0", base.ActiveKey(base.DefaultQueueName), l)
+		t.Errorf("%q has length %d; want 0", base.ActiveKey("", base.DefaultQueueName), l)
 	}
 }
 

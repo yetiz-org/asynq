@@ -387,23 +387,23 @@ func TestInspectorGetQueueInfo(t *testing.T) {
 		h.SeedAllCompletedQueues(t, r, tc.completed)
 		ctx := context.Background()
 		for qname, n := range tc.processed {
-			r.Set(ctx, base.ProcessedKey(qname, now), n, 0)
+			r.Set(ctx, base.ProcessedKey("", qname, now), n, 0)
 		}
 		for qname, n := range tc.failed {
-			r.Set(ctx, base.FailedKey(qname, now), n, 0)
+			r.Set(ctx, base.FailedKey("", qname, now), n, 0)
 		}
 		for qname, n := range tc.processedTotal {
-			r.Set(ctx, base.ProcessedTotalKey(qname), n, 0)
+			r.Set(ctx, base.ProcessedTotalKey("", qname), n, 0)
 		}
 		for qname, n := range tc.failedTotal {
-			r.Set(ctx, base.FailedTotalKey(qname), n, 0)
+			r.Set(ctx, base.FailedTotalKey("", qname), n, 0)
 		}
 		for qname, enqueueTime := range tc.oldestPendingMessageEnqueueTime {
 			if enqueueTime.IsZero() {
 				continue
 			}
-			oldestPendingMessageID := r.LRange(ctx, base.PendingKey(qname), -1, -1).Val()[0] // get the right most msg in the list
-			r.HSet(ctx, base.TaskKey(qname, oldestPendingMessageID), "pending_since", enqueueTime.UnixNano())
+			oldestPendingMessageID := r.LRange(ctx, base.PendingKey("", qname), -1, -1).Val()[0] // get the right most msg in the list
+			r.HSet(ctx, base.TaskKey("", qname, oldestPendingMessageID), "pending_since", enqueueTime.UnixNano())
 		}
 
 		got, err := inspector.GetQueueInfo(tc.qname)
@@ -443,8 +443,8 @@ func TestInspectorHistory(t *testing.T) {
 		// populate last n days data
 		for i := 0; i < tc.n; i++ {
 			ts := now.Add(-time.Duration(i) * 24 * time.Hour)
-			processedKey := base.ProcessedKey(tc.qname, ts)
-			failedKey := base.FailedKey(tc.qname, ts)
+			processedKey := base.ProcessedKey("", tc.qname, ts)
+			failedKey := base.FailedKey("", tc.qname, ts)
 			r.Set(context.Background(), processedKey, (i+1)*1000, 0)
 			r.Set(context.Background(), failedKey, (i+1)*10, 0)
 		}
@@ -1159,19 +1159,19 @@ func TestInspectorListAggregatingTasks(t *testing.T) {
 		},
 		allQueues: []string{"default", "custom"},
 		allGroups: map[string][]string{
-			base.AllGroups("default"): {"group1", "group2"},
-			base.AllGroups("custom"):  {"group1"},
+			base.AllGroups("", "default"): {"group1", "group2"},
+			base.AllGroups("", "custom"):  {"group1"},
 		},
 		groups: map[string][]redis.Z{
-			base.GroupKey("default", "group1"): {
+			base.GroupKey("", "default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-30 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				{Member: m3.ID, Score: float64(now.Add(-10 * time.Second).Unix())},
 			},
-			base.GroupKey("default", "group2"): {
+			base.GroupKey("", "default", "group2"): {
 				{Member: m4.ID, Score: float64(now.Add(-30 * time.Second).Unix())},
 			},
-			base.GroupKey("custom", "group1"): {
+			base.GroupKey("", "custom", "group1"): {
 				{Member: m5.ID, Score: float64(now.Add(-30 * time.Second).Unix())},
 			},
 		},
@@ -3465,19 +3465,19 @@ func TestInspectorGroups(t *testing.T) {
 			{Msg: m5, State: base.TaskStateAggregating},
 		},
 		allGroups: map[string][]string{
-			base.AllGroups("default"): {"group1", "group2"},
-			base.AllGroups("custom"):  {"group1"},
+			base.AllGroups("", "default"): {"group1", "group2"},
+			base.AllGroups("", "custom"):  {"group1"},
 		},
 		groups: map[string][]redis.Z{
-			base.GroupKey("default", "group1"): {
+			base.GroupKey("", "default", "group1"): {
 				{Member: m1.ID, Score: float64(now.Add(-10 * time.Second).Unix())},
 				{Member: m2.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 				{Member: m3.ID, Score: float64(now.Add(-30 * time.Second).Unix())},
 			},
-			base.GroupKey("default", "group2"): {
+			base.GroupKey("", "default", "group2"): {
 				{Member: m4.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 			},
-			base.GroupKey("custom", "group1"): {
+			base.GroupKey("", "custom", "group1"): {
 				{Member: m5.ID, Score: float64(now.Add(-10 * time.Second).Unix())},
 				{Member: m6.ID, Score: float64(now.Add(-20 * time.Second).Unix())},
 			},

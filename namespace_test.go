@@ -136,7 +136,7 @@ func TestClientEnqueueWithNamespace(t *testing.T) {
 			}
 
 			// Verify task was enqueued with correct namespace
-			expectedKey := base.PendingKeyWithNamespace(tc.namespace, tc.qname)
+			expectedKey := base.PendingKey(tc.namespace, tc.qname)
 			pendingTasks := r.LRange(context.Background(), expectedKey, 0, -1).Val()
 			if len(pendingTasks) != 1 {
 				t.Errorf("Expected 1 task in pending queue %q, got %d", expectedKey, len(pendingTasks))
@@ -176,8 +176,8 @@ func TestClientEnqueueWithNamespaceIsolation(t *testing.T) {
 	}
 
 	// Verify tasks are isolated by namespace
-	app1Key := base.PendingKeyWithNamespace("app1", "default")
-	app2Key := base.PendingKeyWithNamespace("app2", "default")
+	app1Key := base.PendingKey("app1", "default")
+	app2Key := base.PendingKey("app2", "default")
 
 	app1Tasks := r.LRange(context.Background(), app1Key, 0, -1).Val()
 	app2Tasks := r.LRange(context.Background(), app2Key, 0, -1).Val()
@@ -191,7 +191,7 @@ func TestClientEnqueueWithNamespaceIsolation(t *testing.T) {
 	}
 
 	// Verify tasks don't interfere with each other
-	defaultKey := base.PendingKey("default") // Original key without namespace
+	defaultKey := base.PendingKey("asynq", "default") // Original key without namespace
 	defaultTasks := r.LRange(context.Background(), defaultKey, 0, -1).Val()
 	if len(defaultTasks) != 0 {
 		t.Errorf("Expected 0 tasks in default key (no namespace), got %d", len(defaultTasks))
@@ -276,14 +276,14 @@ func TestClientServerNamespaceIntegration(t *testing.T) {
 	}
 
 	// Verify task is in correct namespace key
-	expectedKey := base.PendingKeyWithNamespace(namespace, "default")
+	expectedKey := base.PendingKey(namespace, "default")
 	pendingTasks := r.LRange(context.Background(), expectedKey, 0, -1).Val()
 	if len(pendingTasks) != 1 {
 		t.Errorf("Expected 1 task in namespace key %q, got %d", expectedKey, len(pendingTasks))
 	}
 
 	// Verify task is NOT in default namespace key
-	defaultKey := base.PendingKey("default")
+	defaultKey := base.PendingKey("", "default")
 	defaultTasks := r.LRange(context.Background(), defaultKey, 0, -1).Val()
 	if len(defaultTasks) != 0 {
 		t.Errorf("Expected 0 tasks in default key %q, got %d", defaultKey, len(defaultTasks))
@@ -331,7 +331,7 @@ func TestMultipleNamespaceClients(t *testing.T) {
 
 	// Verify each namespace has exactly one task
 	for namespace := range clients {
-		key := base.PendingKeyWithNamespace(namespace, "default")
+		key := base.PendingKey(namespace, "default")
 		tasks := r.LRange(context.Background(), key, 0, -1).Val()
 		if len(tasks) != 1 {
 			t.Errorf("Expected 1 task in namespace %q, got %d", namespace, len(tasks))
@@ -339,7 +339,7 @@ func TestMultipleNamespaceClients(t *testing.T) {
 	}
 
 	// Verify no tasks in default namespace
-	defaultKey := base.PendingKey("default")
+	defaultKey := base.PendingKey("", "default")
 	defaultTasks := r.LRange(context.Background(), defaultKey, 0, -1).Val()
 	if len(defaultTasks) != 0 {
 		t.Errorf("Expected 0 tasks in default namespace, got %d", len(defaultTasks))
@@ -369,14 +369,14 @@ func TestClientEnqueueScheduledWithNamespace(t *testing.T) {
 	}
 
 	// Verify task is in correct namespace scheduled key
-	expectedKey := base.ScheduledKeyWithNamespace(namespace, "default")
+	expectedKey := base.ScheduledKey(namespace, "default")
 	scheduledTasks := r.ZRange(context.Background(), expectedKey, 0, -1).Val()
 	if len(scheduledTasks) != 1 {
 		t.Errorf("Expected 1 task in namespace scheduled key %q, got %d", expectedKey, len(scheduledTasks))
 	}
 
 	// Verify task is NOT in default namespace scheduled key
-	defaultKey := base.ScheduledKey("default")
+	defaultKey := base.ScheduledKey("", "default")
 	defaultTasks := r.ZRange(context.Background(), defaultKey, 0, -1).Val()
 	if len(defaultTasks) != 0 {
 		t.Errorf("Expected 0 tasks in default scheduled key %q, got %d", defaultKey, len(defaultTasks))
@@ -411,14 +411,14 @@ func TestClientEnqueueUniqueWithNamespace(t *testing.T) {
 	}
 
 	// Verify unique key is created with correct namespace
-	expectedUniqueKey := base.UniqueKeyWithNamespace(namespace, "default", task.Type(), task.Payload())
+	expectedUniqueKey := base.UniqueKey(namespace, "default", task.Type(), task.Payload())
 	exists := r.Exists(context.Background(), expectedUniqueKey).Val()
 	if exists != 1 {
 		t.Errorf("Expected unique key %q to exist", expectedUniqueKey)
 	}
 
 	// Verify task is in correct namespace pending key
-	expectedPendingKey := base.PendingKeyWithNamespace(namespace, "default")
+	expectedPendingKey := base.PendingKey(namespace, "default")
 	pendingTasks := r.LRange(context.Background(), expectedPendingKey, 0, -1).Val()
 	if len(pendingTasks) != 1 {
 		t.Errorf("Expected 1 task in namespace pending key %q, got %d", expectedPendingKey, len(pendingTasks))

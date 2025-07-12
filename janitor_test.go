@@ -84,7 +84,7 @@ func TestJanitor(t *testing.T) {
 		for qname, want := range tc.wantCompleted {
 			got := h.GetCompletedEntries(t, r, qname)
 			if diff := cmp.Diff(want, got, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("diff found in %q after running janitor: (-want, +got)\n%s", base.CompletedKey(qname), diff)
+				t.Errorf("diff found in %q after running janitor: (-want, +got)\n%s", base.CompletedKey("", qname), diff)
 			}
 		}
 	}

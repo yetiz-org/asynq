@@ -31,7 +31,7 @@ func TestTaskKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := TaskKey(tc.qname, tc.id)
+		got := TaskKey("", tc.qname, tc.id)
 		if got != tc.want {
 			t.Errorf("TaskKey(%q, %s) = %q, want %q", tc.qname, tc.id, got, tc.want)
 		}
@@ -48,7 +48,7 @@ func TestQueueKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := PendingKey(tc.qname)
+		got := PendingKey("", tc.qname)
 		if got != tc.want {
 			t.Errorf("QueueKey(%q) = %q, want %q", tc.qname, got, tc.want)
 		}
@@ -65,7 +65,7 @@ func TestActiveKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := ActiveKey(tc.qname)
+		got := ActiveKey("", tc.qname)
 		if got != tc.want {
 			t.Errorf("ActiveKey(%q) = %q, want %q", tc.qname, got, tc.want)
 		}
@@ -82,7 +82,7 @@ func TestLeaseKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := LeaseKey(tc.qname)
+		got := LeaseKey("", tc.qname)
 		if got != tc.want {
 			t.Errorf("LeaseKey(%q) = %q, want %q", tc.qname, got, tc.want)
 		}
@@ -99,7 +99,7 @@ func TestScheduledKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := ScheduledKey(tc.qname)
+		got := ScheduledKey("", tc.qname)
 		if got != tc.want {
 			t.Errorf("ScheduledKey(%q) = %q, want %q", tc.qname, got, tc.want)
 		}
@@ -116,7 +116,7 @@ func TestRetryKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := RetryKey(tc.qname)
+		got := RetryKey("", tc.qname)
 		if got != tc.want {
 			t.Errorf("RetryKey(%q) = %q, want %q", tc.qname, got, tc.want)
 		}
@@ -133,7 +133,7 @@ func TestArchivedKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := ArchivedKey(tc.qname)
+		got := ArchivedKey("", tc.qname)
 		if got != tc.want {
 			t.Errorf("ArchivedKey(%q) = %q, want %q", tc.qname, got, tc.want)
 		}
@@ -150,7 +150,7 @@ func TestCompletedKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := CompletedKey(tc.qname)
+		got := CompletedKey("", tc.qname)
 		if got != tc.want {
 			t.Errorf("CompletedKey(%q) = %q, want %q", tc.qname, got, tc.want)
 		}
@@ -167,7 +167,7 @@ func TestPausedKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := PausedKey(tc.qname)
+		got := PausedKey("", tc.qname)
 		if got != tc.want {
 			t.Errorf("PausedKey(%q) = %q, want %q", tc.qname, got, tc.want)
 		}
@@ -184,7 +184,7 @@ func TestProcessedTotalKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := ProcessedTotalKey(tc.qname)
+		got := ProcessedTotalKey("", tc.qname)
 		if got != tc.want {
 			t.Errorf("ProcessedTotalKey(%q) = %q, want %q", tc.qname, got, tc.want)
 		}
@@ -201,7 +201,7 @@ func TestFailedTotalKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := FailedTotalKey(tc.qname)
+		got := FailedTotalKey("", tc.qname)
 		if got != tc.want {
 			t.Errorf("FailedTotalKey(%q) = %q, want %q", tc.qname, got, tc.want)
 		}
@@ -220,7 +220,7 @@ func TestProcessedKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := ProcessedKey(tc.qname, tc.input)
+		got := ProcessedKey("", tc.qname, tc.input)
 		if got != tc.want {
 			t.Errorf("ProcessedKey(%v) = %q, want %q", tc.input, got, tc.want)
 		}
@@ -239,7 +239,7 @@ func TestFailedKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := FailedKey(tc.qname, tc.input)
+		got := FailedKey("", tc.qname, tc.input)
 		if got != tc.want {
 			t.Errorf("FailureKey(%v) = %q, want %q", tc.input, got, tc.want)
 		}
@@ -258,7 +258,7 @@ func TestServerInfoKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := ServerInfoKey(tc.hostname, tc.pid, tc.sid)
+		got := ServerInfoKey("", tc.hostname, tc.pid, tc.sid)
 		if got != tc.want {
 			t.Errorf("ServerInfoKey(%q, %d, %q) = %q, want %q",
 				tc.hostname, tc.pid, tc.sid, got, tc.want)
@@ -278,7 +278,7 @@ func TestWorkersKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := WorkersKey(tc.hostname, tc.pid, tc.sid)
+		got := WorkersKey("", tc.hostname, tc.pid, tc.sid)
 		if got != tc.want {
 			t.Errorf("WorkersKey(%q, %d, %q) = %q, want = %q",
 				tc.hostname, tc.pid, tc.sid, got, tc.want)
@@ -296,7 +296,7 @@ func TestSchedulerEntriesKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := SchedulerEntriesKey(tc.schedulerID)
+		got := SchedulerEntriesKey("", tc.schedulerID)
 		if got != tc.want {
 			t.Errorf("SchedulerEntriesKey(%q) = %q, want %q", tc.schedulerID, got, tc.want)
 		}
@@ -313,7 +313,7 @@ func TestSchedulerHistoryKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := SchedulerHistoryKey(tc.entryID)
+		got := SchedulerHistoryKey("", tc.entryID)
 		if got != tc.want {
 			t.Errorf("SchedulerHistoryKey(%q) = %q, want %q",
 				tc.entryID, got, tc.want)
@@ -388,7 +388,7 @@ func TestUniqueKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := UniqueKey(tc.qname, tc.tasktype, tc.payload)
+		got := UniqueKey("", tc.qname, tc.tasktype, tc.payload)
 		if got != tc.want {
 			t.Errorf("%s: UniqueKey(%q, %q, %v) = %q, want %q", tc.desc, tc.qname, tc.tasktype, tc.payload, got, tc.want)
 		}
@@ -414,7 +414,7 @@ func TestGroupKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := GroupKey(tc.qname, tc.gkey)
+		got := GroupKey("", tc.qname, tc.gkey)
 		if got != tc.want {
 			t.Errorf("GroupKey(%q, %q) = %q, want %q", tc.qname, tc.gkey, got, tc.want)
 		}
@@ -443,7 +443,7 @@ func TestAggregationSetKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := AggregationSetKey(tc.qname, tc.gname, tc.setID)
+		got := AggregationSetKey("", tc.qname, tc.gname, tc.setID)
 		if got != tc.want {
 			t.Errorf("AggregationSetKey(%q, %q, %q) = %q, want %q", tc.qname, tc.gname, tc.setID, got, tc.want)
 		}
@@ -466,7 +466,7 @@ func TestAllGroups(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := AllGroups(tc.qname)
+		got := AllGroups("", tc.qname)
 		if got != tc.want {
 			t.Errorf("AllGroups(%q) = %q, want %q", tc.qname, got, tc.want)
 		}
@@ -489,7 +489,7 @@ func TestAllAggregationSets(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := AllAggregationSets(tc.qname)
+		got := AllAggregationSets("", tc.qname)
 		if got != tc.want {
 			t.Errorf("AllAggregationSets(%q) = %q, want %q", tc.qname, got, tc.want)
 		}

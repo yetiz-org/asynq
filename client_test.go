@@ -132,13 +132,13 @@ func TestClientEnqueueWithProcessAtOption(t *testing.T) {
 		for qname, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r, qname)
 			if diff := cmp.Diff(want, gotPending, h.IgnoreIDOpt, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.PendingKey(qname), diff)
+				t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.PendingKey("", qname), diff)
 			}
 		}
 		for qname, want := range tc.wantScheduled {
 			gotScheduled := h.GetScheduledEntries(t, r, qname)
 			if diff := cmp.Diff(want, gotScheduled, h.IgnoreIDOpt, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.ScheduledKey(qname), diff)
+				t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.ScheduledKey("", qname), diff)
 			}
 		}
 	}
@@ -469,7 +469,7 @@ func testClientEnqueue(t *testing.T, client *Client, r redis.UniversalClient) {
 		for qname, want := range tc.wantPending {
 			got := h.GetPendingMessages(t, r, qname)
 			if diff := cmp.Diff(want, got, h.IgnoreIDOpt); diff != "" {
-				t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.PendingKey(qname), diff)
+				t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.PendingKey("", qname), diff)
 			}
 		}
 	}
@@ -623,7 +623,7 @@ func TestClientEnqueueWithGroupOption(t *testing.T) {
 		for qname, want := range tc.wantPending {
 			got := h.GetPendingMessages(t, r, qname)
 			if diff := cmp.Diff(want, got, h.IgnoreIDOpt, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.PendingKey(qname), diff)
+				t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.PendingKey("", qname), diff)
 			}
 		}
 
@@ -631,7 +631,7 @@ func TestClientEnqueueWithGroupOption(t *testing.T) {
 			for groupKey, want := range groups {
 				got := h.GetGroupEntries(t, r, qname, groupKey)
 				if diff := cmp.Diff(want, got, h.IgnoreIDOpt, cmpopts.EquateEmpty()); diff != "" {
-					t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.GroupKey(qname, groupKey), diff)
+					t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.GroupKey("", "", qname), diff)
 				}
 			}
 		}
@@ -639,7 +639,7 @@ func TestClientEnqueueWithGroupOption(t *testing.T) {
 		for qname, want := range tc.wantScheduled {
 			gotScheduled := h.GetScheduledEntries(t, r, qname)
 			if diff := cmp.Diff(want, gotScheduled, h.IgnoreIDOpt, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.ScheduledKey(qname), diff)
+				t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.ScheduledKey("", qname), diff)
 			}
 		}
 	}
@@ -716,7 +716,7 @@ func TestClientEnqueueWithTaskIDOption(t *testing.T) {
 		for qname, want := range tc.wantPending {
 			got := h.GetPendingMessages(t, r, qname)
 			if diff := cmp.Diff(want, got); diff != "" {
-				t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.PendingKey(qname), diff)
+				t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.PendingKey("", qname), diff)
 			}
 		}
 	}
@@ -850,13 +850,13 @@ func TestClientEnqueueWithProcessInOption(t *testing.T) {
 		for qname, want := range tc.wantPending {
 			gotPending := h.GetPendingMessages(t, r, qname)
 			if diff := cmp.Diff(want, gotPending, h.IgnoreIDOpt, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.PendingKey(qname), diff)
+				t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.PendingKey("", qname), diff)
 			}
 		}
 		for qname, want := range tc.wantScheduled {
 			gotScheduled := h.GetScheduledEntries(t, r, qname)
 			if diff := cmp.Diff(want, gotScheduled, h.IgnoreIDOpt, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.ScheduledKey(qname), diff)
+				t.Errorf("%s;\nmismatch found in %q; (-want,+got)\n%s", tc.desc, base.ScheduledKey("", qname), diff)
 			}
 		}
 	}
@@ -1081,7 +1081,7 @@ func TestClientEnqueueUnique(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		gotTTL := r.TTL(context.Background(), base.UniqueKey(base.DefaultQueueName, tc.task.Type(), tc.task.Payload())).Val()
+		gotTTL := r.TTL(context.Background(), base.UniqueKey("", base.DefaultQueueName, tc.task.Type(), tc.task.Payload())).Val()
 		if !cmp.Equal(tc.ttl.Seconds(), gotTTL.Seconds(), cmpopts.EquateApprox(0, 1)) {
 			t.Errorf("TTL = %v, want %v", gotTTL, tc.ttl)
 			continue
@@ -1126,7 +1126,7 @@ func TestClientEnqueueUniqueWithProcessInOption(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		gotTTL := r.TTL(context.Background(), base.UniqueKey(base.DefaultQueueName, tc.task.Type(), tc.task.Payload())).Val()
+		gotTTL := r.TTL(context.Background(), base.UniqueKey("", base.DefaultQueueName, tc.task.Type(), tc.task.Payload())).Val()
 		wantTTL := time.Duration(tc.ttl.Seconds()+tc.d.Seconds()) * time.Second
 		if !cmp.Equal(wantTTL.Seconds(), gotTTL.Seconds(), cmpopts.EquateApprox(0, 1)) {
 			t.Errorf("TTL = %v, want %v", gotTTL, wantTTL)
@@ -1172,7 +1172,7 @@ func TestClientEnqueueUniqueWithProcessAtOption(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		gotTTL := r.TTL(context.Background(), base.UniqueKey(base.DefaultQueueName, tc.task.Type(), tc.task.Payload())).Val()
+		gotTTL := r.TTL(context.Background(), base.UniqueKey("", base.DefaultQueueName, tc.task.Type(), tc.task.Payload())).Val()
 		wantTTL := time.Until(tc.at.Add(tc.ttl))
 		if !cmp.Equal(wantTTL.Seconds(), gotTTL.Seconds(), cmpopts.EquateApprox(0, 1)) {
 			t.Errorf("TTL = %v, want %v", gotTTL, wantTTL)

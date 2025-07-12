@@ -242,13 +242,13 @@ func TestRecoverer(t *testing.T) {
 		for qname, want := range tc.wantActive {
 			gotActive := h.GetActiveMessages(t, r, qname)
 			if diff := cmp.Diff(want, gotActive, h.SortMsgOpt); diff != "" {
-				t.Errorf("%s; mismatch found in %q; (-want,+got)\n%s", tc.desc, base.ActiveKey(qname), diff)
+				t.Errorf("%s; mismatch found in %q; (-want,+got)\n%s", tc.desc, base.ActiveKey("", qname), diff)
 			}
 		}
 		for qname, want := range tc.wantLease {
 			gotLease := h.GetLeaseEntries(t, r, qname)
 			if diff := cmp.Diff(want, gotLease, h.SortZSetEntryOpt); diff != "" {
-				t.Errorf("%s; mismatch found in %q; (-want,+got)\n%s", tc.desc, base.LeaseKey(qname), diff)
+				t.Errorf("%s; mismatch found in %q; (-want,+got)\n%s", tc.desc, base.LeaseKey("", qname), diff)
 			}
 		}
 		cmpOpt := h.EquateInt64Approx(2) // allow up to two-second difference in `LastFailedAt`
@@ -259,7 +259,7 @@ func TestRecoverer(t *testing.T) {
 				wantRetry = append(wantRetry, h.TaskMessageAfterRetry(*msg, ErrLeaseExpired.Error(), runTime))
 			}
 			if diff := cmp.Diff(wantRetry, gotRetry, h.SortMsgOpt, cmpOpt); diff != "" {
-				t.Errorf("%s; mismatch found in %q: (-want, +got)\n%s", tc.desc, base.RetryKey(qname), diff)
+				t.Errorf("%s; mismatch found in %q: (-want, +got)\n%s", tc.desc, base.RetryKey("", qname), diff)
 			}
 		}
 		for qname, msgs := range tc.wantArchived {
@@ -269,7 +269,7 @@ func TestRecoverer(t *testing.T) {
 				wantArchived = append(wantArchived, h.TaskMessageWithError(*msg, ErrLeaseExpired.Error(), runTime))
 			}
 			if diff := cmp.Diff(wantArchived, gotArchived, h.SortMsgOpt, cmpOpt); diff != "" {
-				t.Errorf("%s; mismatch found in %q: (-want, +got)\n%s", tc.desc, base.ArchivedKey(qname), diff)
+				t.Errorf("%s; mismatch found in %q: (-want, +got)\n%s", tc.desc, base.ArchivedKey("", qname), diff)
 			}
 		}
 	}
