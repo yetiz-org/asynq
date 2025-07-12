@@ -375,30 +375,19 @@ func createRDB() *rdb.RDB {
 		})
 	}
 
-	ns := viper.GetString("namespace")
-	if ns == "" {
-		ns = "asynq" // fallback to default
-	}
-
 	// Create RDB with namespace support
-	return rdb.NewRDBWithNamespace(c, ns)
+	return rdb.NewRDBWithNamespace(c, viper.GetString("namespace"))
 }
 
 // createClient creates a Client instance using flag values and returns it.
 func createClient() *asynq.Client {
 	ns := viper.GetString("namespace")
-	if ns == "" {
-		ns = "asynq" // fallback to default
-	}
 	return asynq.NewClientWithNamespace(getRedisConnOpt(), ns)
 }
 
 // createInspector creates a Inspector instance using flag values and returns it.
 func createInspector() *asynq.Inspector {
 	ns := viper.GetString("namespace")
-	if ns == "" {
-		ns = "asynq" // fallback to default
-	}
 	return asynq.NewInspectorWithNamespace(getRedisConnOpt(), ns)
 }
 
