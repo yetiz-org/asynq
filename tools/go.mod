@@ -17,7 +17,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.0
 	github.com/yetiz-org/asynq v0.29.0
-	github.com/yetiz-org/asynq/x v0.0.0-20250711050252-1d79c183666c
+	github.com/yetiz-org/asynq/x v0.0.0-20250712082012-578746303a16
 	golang.org/x/exp v0.0.0-20191030013958-a1ab85dbe136
 )
 
