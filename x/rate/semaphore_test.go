@@ -406,3 +406,126 @@ type badConnOpt struct {
 func (b badConnOpt) MakeRedisClient() interface{} {
 	return nil
 }
+
+// semaphoreKey is a helper function for testing to generate semaphore keys
+func semaphoreKey(scope string) string {
+	return base.DefaultNamespace + ":sema:" + scope
+}
+
+func TestNewSemaphoreWithNamespace(t *testing.T) {
+	tests := []struct {
+		desc           string
+		namespace      string
+		scope          string
+		maxConcurrency int
+		wantNamespace  string
+	}{
+		{
+			desc:           "semaphore with default namespace",
+			namespace:      "asynq",
+			scope:          "test-scope",
+			maxConcurrency: 3,
+			wantNamespace:  "asynq",
+		},
+		{
+			desc:           "semaphore with custom namespace",
+			namespace:      "myapp",
+			scope:          "test-scope",
+			maxConcurrency: 3,
+			wantNamespace:  "myapp",
+		},
+		{
+			desc:           "semaphore with test namespace",
+			namespace:      "test",
+			scope:          "test-scope",
+			maxConcurrency: 3,
+			wantNamespace:  "test",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			opt := getRedisConnOpt(t)
+			sema := NewSemaphoreWithNamespace(opt, tt.namespace, tt.scope, tt.maxConcurrency)
+			defer sema.Close()
+
+			if sema.namespace != tt.wantNamespace {
+				t.Errorf("Semaphore namespace = %q, want %q", sema.namespace, tt.wantNamespace)
+			}
+
+			expectedKey := tt.namespace + ":sema:" + tt.scope
+			actualKey := sema.semaphoreKey()
+			if actualKey != expectedKey {
+				t.Errorf("Semaphore key = %q, want %q", actualKey, expectedKey)
+			}
+		})
+	}
+}
+
+func TestSemaphoreNamespaceIsolation(t *testing.T) {
+	opt := getRedisConnOpt(t)
+	rc := opt.MakeRedisClient().(redis.UniversalClient)
+	defer rc.Close()
+
+	scope := "isolation-test"
+	taskID1 := uuid.NewString()
+	taskID2 := uuid.NewString()
+
+	// Clean up
+	rc.Del(context.Background(), "app1:sema:"+scope)
+	rc.Del(context.Background(), "app2:sema:"+scope)
+
+	// Create semaphores with different namespaces
+	sema1 := NewSemaphoreWithNamespace(opt, "app1", scope, 1)
+	defer sema1.Close()
+
+	sema2 := NewSemaphoreWithNamespace(opt, "app2", scope, 1)
+	defer sema2.Close()
+
+	// Acquire tokens in both namespaces
+	ctx1, cancel1 := asynqcontext.New(context.Background(), &base.TaskMessage{
+		ID:    taskID1,
+		Queue: "test",
+	}, time.Now().Add(time.Second))
+	defer cancel1()
+
+	ctx2, cancel2 := asynqcontext.New(context.Background(), &base.TaskMessage{
+		ID:    taskID2,
+		Queue: "test",
+	}, time.Now().Add(time.Second))
+	defer cancel2()
+
+	// Both should succeed because they're in different namespaces
+	acquired1, err := sema1.Acquire(ctx1)
+	if err != nil {
+		t.Fatalf("sema1.Acquire failed: %v", err)
+	}
+	if !acquired1 {
+		t.Error("Expected sema1 to acquire token")
+	}
+
+	acquired2, err := sema2.Acquire(ctx2)
+	if err != nil {
+		t.Fatalf("sema2.Acquire failed: %v", err)
+	}
+	if !acquired2 {
+		t.Error("Expected sema2 to acquire token")
+	}
+
+	// Verify tokens are in different keys
+	count1, err := rc.ZCount(context.Background(), "app1:sema:"+scope, "-inf", "+inf").Result()
+	if err != nil {
+		t.Fatalf("Failed to count app1 tokens: %v", err)
+	}
+	if count1 != 1 {
+		t.Errorf("Expected 1 token in app1 namespace, got %d", count1)
+	}
+
+	count2, err := rc.ZCount(context.Background(), "app2:sema:"+scope, "-inf", "+inf").Result()
+	if err != nil {
+		t.Fatalf("Failed to count app2 tokens: %v", err)
+	}
+	if count2 != 1 {
+		t.Errorf("Expected 1 token in app2 namespace, got %d", count2)
+	}
+}

@@ -429,3 +429,79 @@ func TestClientEnqueueUniqueWithNamespace(t *testing.T) {
 		t.Errorf("Expected first task state to be %v, got %v", TaskStatePending, info1.State)
 	}
 }
+
+func TestNewSchedulerWithNamespace(t *testing.T) {
+	r := setup(t)
+	defer r.Close()
+
+	tests := []struct {
+		desc      string
+		namespace string
+		want      string
+	}{
+		{
+			desc:      "scheduler with default namespace",
+			namespace: "asynq",
+			want:      "asynq",
+		},
+		{
+			desc:      "scheduler with custom namespace",
+			namespace: "myapp",
+			want:      "myapp",
+		},
+		{
+			desc:      "scheduler with test namespace",
+			namespace: "test",
+			want:      "test",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.desc, func(t *testing.T) {
+			scheduler := NewSchedulerWithNamespace(getRedisConnOpt(t), tc.namespace, nil)
+			defer scheduler.Shutdown()
+
+			if scheduler.client.namespace != tc.want {
+				t.Errorf("Scheduler client namespace = %q, want %q", scheduler.client.namespace, tc.want)
+			}
+		})
+	}
+}
+
+func TestNewSchedulerFromRedisClientWithNamespace(t *testing.T) {
+	r := setup(t)
+	defer r.Close()
+
+	tests := []struct {
+		desc      string
+		namespace string
+		want      string
+	}{
+		{
+			desc:      "scheduler with default namespace",
+			namespace: "asynq",
+			want:      "asynq",
+		},
+		{
+			desc:      "scheduler with custom namespace",
+			namespace: "myapp",
+			want:      "myapp",
+		},
+		{
+			desc:      "scheduler with test namespace",
+			namespace: "test",
+			want:      "test",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.desc, func(t *testing.T) {
+			scheduler := NewSchedulerFromRedisClientWithNamespace(setup(t), tc.namespace, nil)
+			defer scheduler.Shutdown()
+
+			if scheduler.client.namespace != tc.want {
+				t.Errorf("Scheduler client namespace = %q, want %q", scheduler.client.namespace, tc.want)
+			}
+		})
+	}
+}

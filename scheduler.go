@@ -50,7 +50,14 @@ const defaultHeartbeatInterval = 10 * time.Second
 
 // NewScheduler returns a new Scheduler instance given the redis connection option.
 // The parameter opts is optional, defaults will be used if opts is set to nil
+// Uses the default namespace "asynq".
 func NewScheduler(r RedisConnOpt, opts *SchedulerOpts) *Scheduler {
+	return NewSchedulerWithNamespace(r, base.DefaultNamespace, opts)
+}
+
+// NewSchedulerWithNamespace returns a new Scheduler instance given the redis connection option and namespace.
+// The parameter opts is optional, defaults will be used if opts is set to nil
+func NewSchedulerWithNamespace(r RedisConnOpt, namespace string, opts *SchedulerOpts) *Scheduler {
 	scheduler := newScheduler(opts)
 
 	redisClient, ok := r.MakeRedisClient().(redis.UniversalClient)
@@ -58,10 +65,10 @@ func NewScheduler(r RedisConnOpt, opts *SchedulerOpts) *Scheduler {
 		panic(fmt.Sprintf("asynq: unsupported RedisConnOpt type %T", r))
 	}
 
-	rdb := rdb.NewRDB(redisClient)
+	rdb := rdb.NewRDBWithNamespace(redisClient, namespace)
 
 	scheduler.rdb = rdb
-	scheduler.client = &Client{broker: rdb, sharedConnection: false}
+	scheduler.client = &Client{broker: rdb, sharedConnection: false, namespace: namespace}
 
 	return scheduler
 }
@@ -69,11 +76,19 @@ func NewScheduler(r RedisConnOpt, opts *SchedulerOpts) *Scheduler {
 // NewSchedulerFromRedisClient returns a new instance of Scheduler given a redis.UniversalClient
 // The parameter opts is optional, defaults will be used if opts is set to nil.
 // Warning: The underlying redis connection pool will not be closed by Asynq, you are responsible for closing it.
+// Uses the default namespace "asynq".
 func NewSchedulerFromRedisClient(c redis.UniversalClient, opts *SchedulerOpts) *Scheduler {
+	return NewSchedulerFromRedisClientWithNamespace(c, base.DefaultNamespace, opts)
+}
+
+// NewSchedulerFromRedisClientWithNamespace returns a new instance of Scheduler given a redis.UniversalClient and namespace
+// The parameter opts is optional, defaults will be used if opts is set to nil.
+// Warning: The underlying redis connection pool will not be closed by Asynq, you are responsible for closing it.
+func NewSchedulerFromRedisClientWithNamespace(c redis.UniversalClient, namespace string, opts *SchedulerOpts) *Scheduler {
 	scheduler := newScheduler(opts)
 
-	scheduler.rdb = rdb.NewRDB(c)
-	scheduler.client = NewClientFromRedisClient(c)
+	scheduler.rdb = rdb.NewRDBWithNamespace(c, namespace)
+	scheduler.client = NewClientFromRedisClientWithNamespace(c, namespace)
 
 	return scheduler
 }

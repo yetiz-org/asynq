@@ -9,11 +9,18 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/yetiz-org/asynq"
+	"github.com/yetiz-org/asynq/internal/base"
 	asynqcontext "github.com/yetiz-org/asynq/internal/context"
 )
 
 // NewSemaphore creates a counting Semaphore for the given scope with the given number of tokens.
+// Uses the default namespace "asynq".
 func NewSemaphore(rco asynq.RedisConnOpt, scope string, maxTokens int) *Semaphore {
+	return NewSemaphoreWithNamespace(rco, base.DefaultNamespace, scope, maxTokens)
+}
+
+// NewSemaphoreWithNamespace creates a counting Semaphore for the given namespace, scope and number of tokens.
+func NewSemaphoreWithNamespace(rco asynq.RedisConnOpt, namespace string, scope string, maxTokens int) *Semaphore {
 	rc, ok := rco.MakeRedisClient().(redis.UniversalClient)
 	if !ok {
 		panic(fmt.Sprintf("rate.NewSemaphore: unsupported RedisConnOpt type %T", rco))
@@ -29,6 +36,7 @@ func NewSemaphore(rco asynq.RedisConnOpt, scope string, maxTokens int) *Semaphor
 
 	return &Semaphore{
 		rc:        rc,
+		namespace: namespace,
 		scope:     scope,
 		maxTokens: maxTokens,
 	}
@@ -37,6 +45,7 @@ func NewSemaphore(rco asynq.RedisConnOpt, scope string, maxTokens int) *Semaphor
 // Semaphore is a distributed counting semaphore which can be used to set maxTokens across multiple asynq servers.
 type Semaphore struct {
 	rc        redis.UniversalClient
+	namespace string
 	maxTokens int
 	scope     string
 }
@@ -77,7 +86,7 @@ func (s *Semaphore) Acquire(ctx context.Context) (bool, error) {
 	}
 
 	return acquireCmd.Run(ctx, s.rc,
-		[]string{semaphoreKey(s.scope)},
+		[]string{s.semaphoreKey()},
 		s.maxTokens,
 		time.Now().Unix(),
 		d.Unix(),
@@ -92,7 +101,7 @@ func (s *Semaphore) Release(ctx context.Context) error {
 		return fmt.Errorf("provided context is missing task ID value")
 	}
 
-	n, err := s.rc.ZRem(ctx, semaphoreKey(s.scope), taskID).Result()
+	n, err := s.rc.ZRem(ctx, s.semaphoreKey(), taskID).Result()
 	if err != nil {
 		return fmt.Errorf("redis command failed: %v", err)
 	}
@@ -109,6 +118,6 @@ func (s *Semaphore) Close() error {
 	return s.rc.Close()
 }
 
-func semaphoreKey(scope string) string {
-	return "asynq:sema:" + scope
+func (s *Semaphore) semaphoreKey() string {
+	return s.namespace + ":sema:" + s.scope
 }
