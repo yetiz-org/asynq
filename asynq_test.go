@@ -5,7 +5,9 @@
 package asynq
 
 import (
+	"context"
 	"crypto/tls"
+	"errors"
 	"flag"
 	"sort"
 	"strings"
@@ -148,6 +150,23 @@ func TestParseRedisURI(t *testing.T) {
 				SentinelPassword: "mypassword",
 			},
 		},
+		{
+			"redis-sentinel://localhost:5000,localhost:5001,localhost:5002/3?master=mymaster",
+			RedisFailoverClientOpt{
+				MasterName:    "mymaster",
+				SentinelAddrs: []string{"localhost:5000", "localhost:5001", "localhost:5002"},
+				DB:            3,
+			},
+		},
+		{
+			"redis-sentinel://:mypassword@localhost:5000,localhost:5001,localhost:5002/7?master=mymaster",
+			RedisFailoverClientOpt{
+				MasterName:       "mymaster",
+				SentinelAddrs:    []string{"localhost:5000", "localhost:5001", "localhost:5002"},
+				SentinelPassword: "mypassword",
+				DB:               7,
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -188,6 +207,10 @@ func TestParseRedisURIErrors(t *testing.T) {
 			"non integer for db numbers for socket",
 			"redis-socket:///some/path/to/redis?db=one",
 		},
+		{
+			"non integer for db number for sentinel",
+			"redis-sentinel://localhost:5000/abc?master=mymaster",
+		},
 	}
 
 	for _, tc := range tests {
@@ -196,5 +219,28 @@ func TestParseRedisURIErrors(t *testing.T) {
 			t.Errorf("%s: ParseRedisURI(%q) succeeded for malformed input, want error",
 				tc.desc, tc.uri)
 		}
+	}
+}
+
+func TestParseRedisSentinelClientOptions(t *testing.T) {
+	connOpt, err := ParseRedisURI("redis-sentinel://:password@localhost:5000,localhost:5001/3?master=mymaster")
+	if err != nil {
+		t.Fatalf("ParseRedisURI: %v", err)
+	}
+	client := connOpt.MakeRedisClient().(*redis.Client)
+	defer client.Close()
+	if got := client.Options().DB; got != 3 {
+		t.Errorf("client DB = %d, want 3", got)
+	}
+}
+
+func TestResultWriterWriteCanceled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	writer := &ResultWriter{ctx: ctx}
+
+	n, err := writer.Write([]byte("result"))
+	if n != 0 || !errors.Is(err, context.Canceled) {
+		t.Errorf("Write with canceled context = (%d, %v), want (0, context.Canceled)", n, err)
 	}
 }

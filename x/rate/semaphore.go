@@ -95,7 +95,7 @@ func (s *Semaphore) Acquire(ctx context.Context) (bool, error) {
 }
 
 // Release will release the token on the counting semaphore.
-func (s *Semaphore) Release(ctx context.Context) error {
+func (s *Semaphore) Release(ctx context.Context) (returnErr error) {
 	taskID, ok := asynqcontext.GetTaskID(ctx)
 	if !ok {
 		return fmt.Errorf("provided context is missing task ID value")
@@ -103,7 +103,7 @@ func (s *Semaphore) Release(ctx context.Context) error {
 
 	n, err := s.rc.ZRem(ctx, s.semaphoreKey(), taskID).Result()
 	if err != nil {
-		return fmt.Errorf("redis command failed: %v", err)
+		return fmt.Errorf("redis command failed: %w", err)
 	}
 
 	if n == 0 {

@@ -22,6 +22,38 @@ import (
 	"github.com/yetiz-org/asynq/internal/timeutil"
 )
 
+func TestInspectorRedisErrorIdentity(t *testing.T) {
+	client := getRedisConnOpt(t).MakeRedisClient().(redis.UniversalClient)
+	inspector := NewInspectorFromRedisClient(client)
+	if err := client.Close(); err != nil {
+		t.Fatalf("close Redis client: %v", err)
+	}
+
+	operations := []struct {
+		name string
+		run  func() error
+	}{
+		{"GetTaskInfo", func() error { _, err := inspector.GetTaskInfo("default", "id"); return err }},
+		{"ListPendingTasks", func() error { _, err := inspector.ListPendingTasks("default"); return err }},
+		{"ListActiveTasks", func() error { _, err := inspector.ListActiveTasks("default"); return err }},
+		{"ListAggregatingTasks", func() error { _, err := inspector.ListAggregatingTasks("default", "group"); return err }},
+		{"ListScheduledTasks", func() error { _, err := inspector.ListScheduledTasks("default"); return err }},
+		{"ListRetryTasks", func() error { _, err := inspector.ListRetryTasks("default"); return err }},
+		{"ListArchivedTasks", func() error { _, err := inspector.ListArchivedTasks("default"); return err }},
+		{"ListCompletedTasks", func() error { _, err := inspector.ListCompletedTasks("default"); return err }},
+		{"DeleteTask", func() error { return inspector.DeleteTask("default", "id") }},
+		{"RunTask", func() error { return inspector.RunTask("default", "id") }},
+		{"ArchiveTask", func() error { return inspector.ArchiveTask("default", "id") }},
+	}
+	for _, operation := range operations {
+		t.Run(operation.name, func(t *testing.T) {
+			if err := operation.run(); !errors.Is(err, redis.ErrClosed) {
+				t.Errorf("error = %v, want redis.ErrClosed", err)
+			}
+		})
+	}
+}
+
 func testInspectorQueues(t *testing.T, inspector *Inspector, r redis.UniversalClient) {
 	tests := []struct {
 		queues []string

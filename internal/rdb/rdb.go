@@ -1492,12 +1492,13 @@ func (r *RDB) ClearSchedulerEntries(schedulerID string) error {
 }
 
 // CancelationPubSub returns a pubsub for cancelation messages.
-func (r *RDB) CancelationPubSub() (*redis.PubSub, error) {
+func (r *RDB) CancelationPubSub() (pubsub *redis.PubSub, rtErr error) {
 	var op errors.Op = "rdb.CancelationPubSub"
 	ctx := context.Background()
-	pubsub := r.client.Subscribe(ctx, base.CancelChannelKey(r.namespace))
+	pubsub = r.client.Subscribe(ctx, base.CancelChannelKey(r.namespace))
 	_, err := pubsub.Receive(ctx)
 	if err != nil {
+		pubsub.Close()
 		return nil, errors.E(op, errors.Unknown, fmt.Sprintf("redis pubsub receive error: %v", err))
 	}
 	return pubsub, nil

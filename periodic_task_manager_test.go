@@ -5,12 +5,14 @@
 package asynq
 
 import (
+	"errors"
 	"sort"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/redis/go-redis/v9"
 )
 
 // Trivial implementation of PeriodicTaskConfigProvider for testing purpose.
@@ -29,6 +31,29 @@ func (p *FakeConfigProvider) GetConfigs() ([]*PeriodicTaskConfig, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.cfgs, nil
+}
+
+type failingConfigProvider struct{ err error }
+
+func (p failingConfigProvider) GetConfigs() (configs []*PeriodicTaskConfig, err error) {
+	return nil, p.err
+}
+
+func TestPeriodicTaskManagerProviderErrorIdentity(t *testing.T) {
+	providerErr := errors.New("periodic provider failed")
+	client := getRedisConnOpt(t).MakeRedisClient().(redis.UniversalClient)
+	defer client.Close()
+	mgr, err := NewPeriodicTaskManager(PeriodicTaskManagerOpts{
+		RedisUniversalClient:       client,
+		PeriodicTaskConfigProvider: failingConfigProvider{err: providerErr},
+	})
+	if err != nil {
+		t.Fatalf("NewPeriodicTaskManager: %v", err)
+	}
+
+	if err := mgr.Start(); !errors.Is(err, providerErr) {
+		t.Errorf("Start() error = %v, want provider error identity", err)
+	}
 }
 
 func TestNewPeriodicTaskManager(t *testing.T) {

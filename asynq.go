@@ -446,11 +446,11 @@ func (opt RedisClusterClientOpt) MakeRedisClient() interface{} {
 //	redis://[:password@]host[:port][/dbnumber]
 //	rediss://[:password@]host[:port][/dbnumber]
 //	redis-socket://[:password@]path[?db=dbnumber]
-//	redis-sentinel://[:password@]host1[:port][,host2:[:port]][,hostN:[:port]][?master=masterName]
-func ParseRedisURI(uri string) (RedisConnOpt, error) {
+//	redis-sentinel://[:password@]host1[:port][,host2:[:port]][,hostN:[:port]][/dbnumber][?master=masterName]
+func ParseRedisURI(uri string) (connOpt RedisConnOpt, returnErr error) {
 	u, err := url.Parse(uri)
 	if err != nil {
-		return nil, fmt.Errorf("asynq: could not parse redis uri: %v", err)
+		return nil, fmt.Errorf("asynq: could not parse redis uri: %w", err)
 	}
 	switch u.Scheme {
 	case "redis", "rediss":
@@ -517,14 +517,22 @@ func parseRedisSocketURI(u *url.URL) (RedisConnOpt, error) {
 	return RedisClientOpt{Network: "unix", Addr: u.Path, DB: db, Password: password}, nil
 }
 
-func parseRedisSentinelURI(u *url.URL) (RedisConnOpt, error) {
+func parseRedisSentinelURI(u *url.URL) (connOpt RedisConnOpt, returnErr error) {
 	addrs := strings.Split(u.Host, ",")
 	master := u.Query().Get("master")
+	var db int
+	var err error
+	if u.Path != "" {
+		db, err = strconv.Atoi(strings.Split(strings.Trim(u.Path, "/"), "/")[0])
+		if err != nil {
+			return nil, fmt.Errorf("asynq: could not parse redis sentinel uri: database number should be the first segment of the path")
+		}
+	}
 	var password string
 	if v, ok := u.User.Password(); ok {
 		password = v
 	}
-	return RedisFailoverClientOpt{MasterName: master, SentinelAddrs: addrs, SentinelPassword: password}, nil
+	return RedisFailoverClientOpt{MasterName: master, SentinelAddrs: addrs, SentinelPassword: password, DB: db}, nil
 }
 
 // ResultWriter is a client interface to write result data for a task.
@@ -540,7 +548,7 @@ type ResultWriter struct {
 func (w *ResultWriter) Write(data []byte) (n int, err error) {
 	select {
 	case <-w.ctx.Done():
-		return 0, fmt.Errorf("failed to result task result: %v", w.ctx.Err())
+		return 0, fmt.Errorf("failed to result task result: %w", w.ctx.Err())
 	default:
 	}
 	return w.broker.WriteResult(w.qname, w.id, data)

@@ -2,6 +2,7 @@ package rate
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"strings"
@@ -28,6 +29,19 @@ func init() {
 	flag.IntVar(&redisDB, "redis_db", 14, "redis db number to use in testing")
 	flag.BoolVar(&useRedisCluster, "redis_cluster", false, "use redis cluster as a broker in testing")
 	flag.StringVar(&redisClusterAddrs, "redis_cluster_addrs", "localhost:7000,localhost:7001,localhost:7002", "comma separated list of redis server addresses")
+}
+
+func TestSemaphoreReleaseCanceledErrorIdentity(t *testing.T) {
+	sema := NewSemaphore(getRedisConnOpt(t), "canceled-error", 1)
+	defer sema.Close()
+
+	ctx, cancel := asynqcontext.New(context.Background(), &base.TaskMessage{
+		ID: "canceled-task",
+	}, time.Now().Add(time.Minute))
+	cancel()
+	if err := sema.Release(ctx); !errors.Is(err, context.Canceled) {
+		t.Errorf("Release() error = %v, want context.Canceled", err)
+	}
 }
 
 func TestNewSemaphore(t *testing.T) {

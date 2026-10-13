@@ -11,6 +11,7 @@ import (
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/yetiz-org/asynq/tools/asynq/cmd/dash"
 )
 
@@ -40,6 +41,7 @@ var dashCmd = &cobra.Command{
 		dash.Run(dash.Options{
 			PollInterval: flagPollInterval,
 			RedisConnOpt: getRedisConnOpt(),
+			Namespace:    viper.GetString("namespace"),
 		})
 	},
 }
